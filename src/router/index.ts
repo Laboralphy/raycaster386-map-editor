@@ -4,6 +4,7 @@ import AboutView from '../views/AboutView.vue';
 import AnimationBuilderView from '../views/AnimationBuilderView.vue';
 import BlockBrowserView from '../views/BlockBrowserView.vue';
 import BlockBuilderView from '../views/BlockBuilderView.vue';
+import LevelGridView from '../views/LevelGridView.vue';
 import LevelListView from '../views/LevelListView.vue';
 import NotYetView from '../views/NotYetView.vue';
 import SettingsView from '../views/SettingsView.vue';
@@ -32,32 +33,28 @@ const routes: RouteRecordRaw[] = [
     { path: '/', name: 'about', components: { default: AboutView, side: AboutSide } },
 
     // The grid editor and its four side panels — phase 4.
-    {
-        path: '/level/blocks',
-        components: { default: NotYetView, side: BlockBrowserView },
-        meta: { title: 'Level grid', phase: 'phase 4 (the grid)' },
-    },
-    {
-        path: '/level/things',
-        components: { default: NotYetView, side: ThingBrowserView },
-        meta: { title: 'Level grid', phase: 'phase 4 (the grid)' },
-    },
+    { path: '/level/blocks', components: { default: LevelGridView, side: BlockBrowserView } },
+    { path: '/level/things', components: { default: LevelGridView, side: ThingBrowserView } },
     {
         path: '/level/tags',
-        components: notYet,
-        meta: { title: 'Tags', phase: 'phase 4 (the grid)' },
+        components: { default: LevelGridView, side: NotYetView },
+        meta: { title: 'Tags', phase: 'the tag panel, still to come' },
     },
     {
         path: '/level/marks',
-        components: notYet,
-        meta: { title: 'Marks', phase: 'phase 4 (the grid)' },
+        components: { default: LevelGridView, side: NotYetView },
+        meta: { title: 'Marks', phase: 'the marker panel, still to come' },
     },
     {
         path: '/level/utilpanel',
-        components: notYet,
-        meta: { title: 'Utilities', phase: 'phase 4 (the grid)' },
+        components: { default: LevelGridView, side: NotYetView },
+        meta: { title: 'Utilities', phase: 'the utility panel, still to come' },
     },
-    { path: '/view-thing', components: notYet, meta: { title: 'Thing', phase: 'phase 4' } },
+    {
+        path: '/view-thing',
+        components: { default: LevelGridView, side: NotYetView },
+        meta: { title: 'Thing', phase: 'the thing panel, still to come' },
+    },
 
     // Tiles and animation.
     { path: '/load-tiles', components: { default: TileLoaderView, side: TileBrowserView } },

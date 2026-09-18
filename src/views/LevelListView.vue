@@ -8,6 +8,7 @@ import SvgIcon from '../components/SvgIcon.vue';
 import WindowFrame from '../components/WindowFrame.vue';
 import * as vault from '../services/vaultClient';
 import { useEditorStore } from '../stores/editor';
+import { useHistoryStore } from '../stores/history';
 import { useLevelStore } from '../stores/level';
 
 /**
@@ -21,16 +22,21 @@ import { useLevelStore } from '../stores/level';
 const router = useRouter();
 const editor = useEditorStore();
 const level = useLevelStore();
+const history = useHistoryStore();
 
 const selected = ref('');
 
 async function open(name: string): Promise<void> {
     try {
         await level.loadFromVault(name);
+        // The undo stack belongs to the level that built it: keeping it would
+        // let an undo paste cells from a different map into this one.
+        history.reset();
+        editor.clearRegion();
         editor.levelName = name;
         editor.dirty = false;
         editor.setStatus(`Level successfully loaded : ${name}`);
-        await router.push('/settings');
+        await router.push('/level/blocks');
     } catch (e) {
         editor.setStatus(`Level NOT loaded : ${(e as Error).message}`);
         editor.showPopup((e as Error).message, 'error');

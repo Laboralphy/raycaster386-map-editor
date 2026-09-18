@@ -1,11 +1,19 @@
 import type { MapEditLevel } from '@laboralphy/raycaster386/mapedit';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { createEmptyLevel } from '../domain/defaults';
+import { createEmptyLevel, emptyCell } from '../domain/defaults';
 import { nextBlockId, nextThingId, nextTileId } from '../domain/ids';
 import { parseLevel } from '../domain/parse';
 import { toMapEditLevel } from '../domain/serialise';
-import type { EditorBlock, EditorLevel, EditorThing, EditorTile, TileType } from '../domain/types';
+import type {
+    EditorBlock,
+    EditorCell,
+    EditorLevel,
+    EditorMark,
+    EditorThing,
+    EditorTile,
+    TileType,
+} from '../domain/types';
 import * as vault from '../services/vaultClient';
 
 /**
@@ -328,6 +336,112 @@ export const useLevelStore = defineStore('level', () => {
         things.splice(to, 0, moved);
     }
 
+    // --- the grid -----------------------------------------------------------
+
+    function cellAt(x: number, y: number): EditorCell | undefined {
+        return doc.value.grid[y]?.[x];
+    }
+
+    /** Paints one cell on one storey. `0` clears it. */
+    function setCellBlock(x: number, y: number, floor: number, blockId: number): void {
+        const cell = cellAt(x, y);
+        if (!cell) {
+            return;
+        }
+        if (floor === 1) {
+            cell.upperblock = blockId;
+        } else {
+            cell.block = blockId;
+        }
+        cell.modified = true;
+    }
+
+    function setCellsBlock(
+        cells: readonly { x: number; y: number }[],
+        floor: number,
+        blockId: number
+    ): void {
+        for (const { x, y } of cells) {
+            setCellBlock(x, y, floor, blockId);
+        }
+    }
+
+    /**
+     * Resizes the grid, keeping what still fits.
+     *
+     * Ported from `SET_GRID_SIZE`, which grew and shrank the square in place.
+     * Startpoints outside the new bounds are left where they are — they read as
+     * unplaced, which is what the old editor did too.
+     */
+    function setGridSize(size: number): void {
+        const next = Math.max(1, Math.min(256, size | 0));
+        const grid = doc.value.grid;
+        while (grid.length > next) {
+            grid.pop();
+        }
+        for (const row of grid) {
+            while (row.length > next) {
+                row.pop();
+            }
+            while (row.length < next) {
+                row.push(emptyCell());
+            }
+        }
+        while (grid.length < next) {
+            grid.push(Array.from({ length: next }, emptyCell));
+        }
+    }
+
+    function setCellTags(x: number, y: number, tags: readonly string[]): void {
+        const cell = cellAt(x, y);
+        if (cell) {
+            cell.tags = [...tags];
+            cell.modified = true;
+        }
+    }
+
+    function setCellMark(x: number, y: number, mark: Partial<EditorMark>): void {
+        const cell = cellAt(x, y);
+        if (cell) {
+            cell.mark = { ...cell.mark, ...mark };
+            cell.modified = true;
+        }
+    }
+
+    /**
+     * Places a thing on a cell's 3x3 sub-grid, replacing whatever was there.
+     *
+     * The list is kept sorted by sub-cell position, as the original did, so the
+     * saved order does not depend on the order things were placed.
+     */
+    function setCellThing(x: number, y: number, xt: number, yt: number, id: number): void {
+        const cell = cellAt(x, y);
+        if (!cell) {
+            return;
+        }
+        const others = cell.things.filter((t) => t.x !== xt || t.y !== yt);
+        cell.things = [...others, { id, x: xt, y: yt }].sort(
+            (a, b) => a.x * 10 + a.y - (b.x * 10 + b.y)
+        );
+        cell.modified = true;
+    }
+
+    function removeCellThing(x: number, y: number, xt: number, yt: number): void {
+        const cell = cellAt(x, y);
+        if (!cell) {
+            return;
+        }
+        cell.things = cell.things.filter((t) => t.x !== xt || t.y !== yt);
+        // The old REMOVE_CELL_THING forgot to mark the cell, so the grid kept
+        // drawing a thing that was no longer there until something else forced
+        // a full repaint.
+        cell.modified = true;
+    }
+
+    function thingAt(x: number, y: number, xt: number, yt: number) {
+        return cellAt(x, y)?.things.find((t) => t.x === xt && t.y === yt);
+    }
+
     // --- settings, as the Settings screen edits them -----------------------
 
     /**
@@ -393,6 +507,15 @@ export const useLevelStore = defineStore('level', () => {
         upsertThing,
         deleteThing,
         moveThing,
+        cellAt,
+        setCellBlock,
+        setCellsBlock,
+        setGridSize,
+        setCellTags,
+        setCellMark,
+        setCellThing,
+        removeCellThing,
+        thingAt,
         tileUsage,
         addTiles,
         moveTile,

@@ -40,6 +40,52 @@ export const useEditorStore = defineStore('editor', () => {
     /** The thing template the browser has selected. */
     const thingBrowserSelected = ref<number | null>(null);
 
+    /**
+     * The rectangle selected on the grid. `x1 < 0` means nothing is selected.
+     *
+     * Kept here rather than in the grid because the tag, mark and utility
+     * panels all act on it — the grid draws it, they read it.
+     */
+    const selectedRegion = ref({ x1: -1, y1: -1, x2: -1, y2: -1 });
+    /** 0 selects, 1 draws. */
+    const selectedTool = ref(0);
+    /** 0 is the ground floor, 1 the upper storey. */
+    const selectedFloor = ref(0);
+    /** The thing the grid last picked, for the thing panel to show. */
+    const selectedThing = ref<{ xc: number; yc: number; xt: number; yt: number } | null>(null);
+
+    const hasRegion = computed(() => selectedRegion.value.x1 >= 0);
+
+    /** The selection, with its corners in order. */
+    const region = computed(() => {
+        const r = selectedRegion.value;
+        return {
+            x1: Math.min(r.x1, r.x2),
+            y1: Math.min(r.y1, r.y2),
+            x2: Math.max(r.x1, r.x2),
+            y2: Math.max(r.y1, r.y2),
+        };
+    });
+
+    /** Every cell of the current selection, or nothing when there is none. */
+    function regionCells(): { x: number; y: number }[] {
+        if (!hasRegion.value) {
+            return [];
+        }
+        const r = region.value;
+        const cells: { x: number; y: number }[] = [];
+        for (let y = r.y1; y <= r.y2; ++y) {
+            for (let x = r.x1; x <= r.x2; ++x) {
+                cells.push({ x, y });
+            }
+        }
+        return cells;
+    }
+
+    function clearRegion(): void {
+        selectedRegion.value = { x1: -1, y1: -1, x2: -1, y2: -1 };
+    }
+
     const popup = ref<{
         visible: boolean;
         type: PopupType;
@@ -91,6 +137,14 @@ export const useEditorStore = defineStore('editor', () => {
         tileBrowserType,
         blockBrowserSelected,
         thingBrowserSelected,
+        selectedRegion,
+        selectedTool,
+        selectedFloor,
+        selectedThing,
+        hasRegion,
+        region,
+        regionCells,
+        clearRegion,
         popup,
         popupTitle,
         setStatus,

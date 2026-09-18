@@ -24,6 +24,8 @@ export interface DrawCall {
 export interface FakeCanvas {
     width: number;
     height: number;
+    /** Every assignment to width or height — assigning either clears a canvas. */
+    resizes: { axis: 'width' | 'height'; value: number }[];
     calls: DrawCall[];
     cleared: number;
     /** Every stroke colour used, in order — how a test reads the kind marks. */
@@ -37,9 +39,27 @@ export interface FakeCanvas {
 }
 
 function fakeCanvas(width: number, height: number): FakeCanvas {
+    let w = width;
+    let h = height;
+    const resizes: { axis: 'width' | 'height'; value: number }[] = [];
     const canvas: FakeCanvas = {
-        width,
-        height,
+        // Accessors rather than plain fields: assigning width or height is what
+        // clears a real canvas, so a test needs to see it happen.
+        get width() {
+            return w;
+        },
+        set width(value: number) {
+            w = value;
+            resizes.push({ axis: 'width', value });
+        },
+        get height() {
+            return h;
+        },
+        set height(value: number) {
+            h = value;
+            resizes.push({ axis: 'height', value });
+        },
+        resizes,
         calls: [],
         cleared: 0,
         strokes: [],

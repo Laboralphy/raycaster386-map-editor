@@ -9,11 +9,14 @@ survive the move to Vue 3. The reasoning and the audit behind it are in the
 library's
 [MAPEDIT_ANALYSIS.md](https://github.com/Laboralphy/raycaster-386/blob/master/documentation/MAPEDIT_ANALYSIS.md).
 
-**Status: phase 3 done — blocks and things.** The editor opens the four real
-mansion levels, holds them in a typed document model, imports and manages their
-tiles, builds blocks and thing templates out of them, and writes everything back
-in a form the shipped converter still accepts. The grid itself is not migrated
-yet; its route exists and says so.
+**Status: phase 4 — the grid works.** The editor opens the four real mansion
+levels, holds them in a typed document model, imports and manages their tiles,
+builds blocks and thing templates, paints them onto the map with undo and redo,
+and writes everything back in a form the shipped converter still accepts.
+
+Four side panels remain before phase 4 is finished: tags, markers, utilities
+and the thing inspector. The grid serves their routes already — only their
+panels are missing, and each says so where it will appear.
 
 ## Stack
 
@@ -125,9 +128,12 @@ specification to read, not code to ship.
 Still to take from it:
 
 - **The remaining templates.** Copy the markup, rewrite the script.
-- **~290 lines of framework-free canvas code** still in `src/libs/` —
-  `silly-canvas-factory` (192) and `grid-renderer` (96), both of which the grid
-  needs. `tileset-splitter`, `append-images` and `block-renderer` are ported.
+- **The four remaining side panels**: `TagManager` (179), `MarkerManager`
+  (227), `UtilPanel` (140) and `ThingView` (120).
+
+All of the framework-free canvas code is ported: `tileset-splitter`,
+`append-images`, `block-renderer`, `grid-renderer`, `silly-canvas-factory`
+(now `cellOverlay`) and `block-cache`.
 
 `libs/generate` is **not** on the list — it is already ported, and ships as
 `@laboralphy/raycaster386/mapedit`.
@@ -139,7 +145,7 @@ Still to take from it:
 | 1 ✅  | Chrome, document model, Pinia stores, Koa vault, level list, settings     |
 | 2 ✅  | Tiles: splitter, appender, browser, loader, animation builder, `Siblings` |
 | 3 ✅  | Blocks and things: block renderer, builders, browsers                     |
-| 4     | The grid: `LevelGrid`, grid renderer, overlays, undo                      |
+| 4 🔨  | The grid: `LevelGrid`, grid renderer, overlays, undo — panels left        |
 | 5     | Preview: convert → `loadLevel` → `Renderer` in the browser                |
 | 6     | Export to a game directory                                                |
 | 7     | Validation surfaced in the UI, then the UX improvements                   |
