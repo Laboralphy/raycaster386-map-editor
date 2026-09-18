@@ -10,11 +10,15 @@ If you are a fresh session with no context, read this first, then the README.
 
 ## Do this first
 
-**Open the editor in a browser and look at it.** The layout bug found on
-2026-09-18 — the app rendered only its menu and status bar, with nothing between
-them — passed all 187 tests at the time, because happy-dom computes no layout.
-Everything that draws to a canvas is in the same position: the tests assert
-_where_ things are drawn, never what they look like.
+**The interface was confirmed working in a browser on 2026-09-18**, after the
+layout fix. That was the first look at any of it, and it found the bug that
+mattered: the app had been rendering only its menu and status bar, with nothing
+between them, while all 187 tests passed — happy-dom computes no layout.
+
+So the shell is known good. What is still unverified is the _detail_ of anything
+drawn on a canvas: the tests assert _where_ things are drawn, never what they
+look like. One small glitch was noticed and judged not worth chasing at the
+time; it is not written down, so whoever sees it next should describe it here.
 
 ```bash
 cd ~/projects/raycaster386-map-editor
@@ -23,9 +27,8 @@ npm run dev       # terminal 2 — the app, on :5173
 ```
 
 Open `mans-test-ai` first (17×17, 2 blocks — a broken render is obvious), then
-`mans-intro` (59×59, 53 blocks, two storeys).
-
-Worth checking, roughly in order of how likely I think each is to be wrong:
+`mans-intro` (59×59, 53 blocks, two storeys). Worth a look while you have it
+open, roughly in order of how likely I think each is to be wrong:
 
 1. **Do blocks appear on the grid at all?** A field of small red dots means the
    block cache is not hydrating — that dot is the "no block here" marker.
