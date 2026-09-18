@@ -26,6 +26,15 @@ import * as vault from '../services/vaultClient';
  * `doc` precisely, and leaves room for store-level concerns beside it.
  */
 
+export type ShiftDirection = 'n' | 's' | 'e' | 'w';
+
+const SHIFT_DELTA: Record<ShiftDirection, { x: number; y: number }> = {
+    n: { x: 0, y: -1 },
+    s: { x: 0, y: 1 },
+    w: { x: -1, y: 0 },
+    e: { x: 1, y: 0 },
+};
+
 const TILE_KEY: Record<TileType, 'walls' | 'flats' | 'sprites'> = {
     wall: 'walls',
     flat: 'flats',
@@ -442,6 +451,175 @@ export const useLevelStore = defineStore('level', () => {
         return cellAt(x, y)?.things.find((t) => t.x === xt && t.y === yt);
     }
 
+    function addCellTag(x: number, y: number, tag: string): void {
+        const cell = cellAt(x, y);
+        if (cell && tag !== '' && !cell.tags.includes(tag)) {
+            cell.tags.push(tag);
+            cell.modified = true;
+        }
+    }
+
+    function removeCellTag(x: number, y: number, tag: string): void {
+        const cell = cellAt(x, y);
+        if (!cell) {
+            return;
+        }
+        const before = cell.tags.length;
+        cell.tags = cell.tags.filter((t) => t !== tag);
+        if (cell.tags.length !== before) {
+            cell.modified = true;
+        }
+    }
+
+    function renameCellTag(x: number, y: number, from: string, to: string): void {
+        const cell = cellAt(x, y);
+        if (cell && to !== '') {
+            cell.tags = cell.tags.map((t) => (t === from ? to : t));
+            cell.modified = true;
+        }
+    }
+
+    /** Every distinct tag on a set of cells, in first-seen order. */
+    function tagsOn(cells: readonly { x: number; y: number }[]): string[] {
+        const seen = new Set<string>();
+        for (const { x, y } of cells) {
+            for (const tag of cellAt(x, y)?.tags ?? []) {
+                seen.add(tag);
+            }
+        }
+        return [...seen];
+    }
+
+    // --- start points -------------------------------------------------------
+
+    function addStartpoint(): number {
+        doc.value.startpoints.push({ x: -1, y: -1, z: 1, angle: 0 });
+        return doc.value.startpoints.length - 1;
+    }
+
+    /**
+     * Removes a start point, keeping at least one.
+     *
+     * `actor.startpoint` is an index, so removing an earlier entry shifts the
+     * chosen one — it is clamped and re-pointed here rather than left dangling.
+     */
+    function removeStartpoint(index: number): boolean {
+        const points = doc.value.startpoints;
+        if (points.length <= 1 || index < 0 || index >= points.length) {
+            return false;
+        }
+        points.splice(index, 1);
+        const chosen = doc.value.actor.startpoint;
+        doc.value.actor.startpoint =
+            chosen > index ? chosen - 1 : Math.min(chosen, points.length - 1);
+        return true;
+    }
+
+    function setStartpoint(index: number, at: { x: number; y: number; angle: number }): void {
+        const point = doc.value.startpoints[index];
+        if (point) {
+            point.x = at.x;
+            point.y = at.y;
+            point.angle = at.angle;
+            // The old mutations forced z to 1 on every write; eye height is a
+            // level-wide idea the editor never exposed.
+            point.z = 1;
+        }
+    }
+
+    function setActorStartpoint(index: number): void {
+        const count = doc.value.startpoints.length;
+        doc.value.actor.startpoint = Math.max(0, Math.min(index | 0, count - 1));
+    }
+
+    // --- shifting -----------------------------------------------------------
+
+    /**
+     * Moves the whole map one cell, wrapping round the edges.
+     *
+     * Start points travel with it, so a shifted map still starts where it did
+     * relative to its walls.
+     */
+    function shiftGrid(direction: ShiftDirection): void {
+        const grid = doc.value.grid;
+        const size = grid.length;
+        if (direction === 'n') {
+            grid.push(grid.shift() as EditorCell[]);
+        } else if (direction === 's') {
+            grid.unshift(grid.pop() as EditorCell[]);
+        } else {
+            for (const row of grid) {
+                if (direction === 'w') {
+                    row.push(row.shift() as EditorCell);
+                } else {
+                    row.unshift(row.pop() as EditorCell);
+                }
+            }
+        }
+        const delta = SHIFT_DELTA[direction];
+        for (const point of doc.value.startpoints) {
+            if (point.x >= 0 && point.y >= 0) {
+                point.x = (point.x + delta.x + size) % size;
+                point.y = (point.y + delta.y + size) % size;
+            }
+        }
+        markAll();
+    }
+
+    /** The same, but only within a rectangle; cells wrap inside it. */
+    function shiftRegion(
+        region: { x1: number; y1: number; x2: number; y2: number },
+        direction: ShiftDirection
+    ): void {
+        const grid = doc.value.grid;
+        const { x1, y1, x2, y2 } = region;
+        const width = x2 - x1 + 1;
+        const height = y2 - y1 + 1;
+        if (width < 1 || height < 1) {
+            return;
+        }
+        const slice = grid.slice(y1, y2 + 1).map((row) => row.slice(x1, x2 + 1));
+        if (direction === 'n') {
+            slice.push(slice.shift() as EditorCell[]);
+        } else if (direction === 's') {
+            slice.unshift(slice.pop() as EditorCell[]);
+        } else {
+            for (const row of slice) {
+                if (direction === 'w') {
+                    row.push(row.shift() as EditorCell);
+                } else {
+                    row.unshift(row.pop() as EditorCell);
+                }
+            }
+        }
+        for (let y = 0; y < height; ++y) {
+            for (let x = 0; x < width; ++x) {
+                grid[y1 + y][x1 + x] = slice[y][x];
+            }
+        }
+        const delta = SHIFT_DELTA[direction];
+        for (const point of doc.value.startpoints) {
+            const inside = point.x >= x1 && point.x <= x2 && point.y >= y1 && point.y <= y2;
+            if (inside) {
+                point.x = x1 + ((point.x - x1 + delta.x + width) % width);
+                point.y = y1 + ((point.y - y1 + delta.y + height) % height);
+            }
+        }
+        markAll();
+    }
+
+    /** After a shift every cell has moved, so every cell needs repainting. */
+    function markAll(): void {
+        for (const row of doc.value.grid) {
+            for (const cell of row) {
+                cell.modified = true;
+            }
+        }
+    }
+
+    /** Roughly how much room the level takes, as the old storage gauge showed. */
+    const storageUsage = computed(() => JSON.stringify(doc.value).length);
+
     // --- settings, as the Settings screen edits them -----------------------
 
     /**
@@ -516,6 +694,17 @@ export const useLevelStore = defineStore('level', () => {
         setCellThing,
         removeCellThing,
         thingAt,
+        addCellTag,
+        removeCellTag,
+        renameCellTag,
+        tagsOn,
+        addStartpoint,
+        removeStartpoint,
+        setStartpoint,
+        setActorStartpoint,
+        shiftGrid,
+        shiftRegion,
+        storageUsage,
         tileUsage,
         addTiles,
         moveTile,

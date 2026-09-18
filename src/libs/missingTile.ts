@@ -1,38 +1,26 @@
-import { context2d, domCanvasOps, type CanvasOps } from './canvasOps';
-
 /**
  * The placeholder for a sprite tile that is no longer there.
  *
  * A thing keeps a numeric tile id, and nothing stops that tile being deleted —
  * `deleteTile` refuses when a thing uses it, but a level saved by the old
- * editor may already contain the dangling reference. Drawing a red cross says
- * so plainly; the original's first attempt threw instead, which took the whole
- * browser panel down with it.
+ * editor may already carry the dangling reference. Drawing a red cross says so
+ * plainly.
  *
- * Cached, because a browser full of broken things would otherwise redraw this
- * once per entry per render.
+ * An inline SVG rather than a canvas. The original drew this with
+ * `createCanvas` + `getContext('2d')`, which means a browser panel showing a
+ * broken thing cannot be rendered anywhere without one — including in a test.
+ * The picture is two lines; it does not need a rendering context to exist.
  */
-let cached: string | null = null;
+const MISSING_TILE_SVG = [
+    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">',
+    '<rect width="64" height="64" fill="none"/>',
+    '<path d="M0 0 L64 64 M64 0 L0 64" stroke="red" stroke-width="4"/>',
+    '</svg>',
+].join('');
 
-export function missingTileImage(ops: CanvasOps = domCanvasOps): string {
-    if (cached !== null) {
-        return cached;
-    }
-    const canvas = ops.createCanvas(64, 64);
-    const ctx = context2d(canvas);
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(64, 64);
-    ctx.moveTo(64, 0);
-    ctx.lineTo(0, 64);
-    ctx.stroke();
-    cached = ops.getData(canvas);
-    return cached;
-}
+export const MISSING_TILE_IMAGE = `data:image/svg+xml,${encodeURIComponent(MISSING_TILE_SVG)}`;
 
-/** Test seam: forgets the cached placeholder. */
-export function resetMissingTileImage(): void {
-    cached = null;
+/** The placeholder, as an image source. */
+export function missingTileImage(): string {
+    return MISSING_TILE_IMAGE;
 }

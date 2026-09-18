@@ -9,6 +9,7 @@
 
 html,
 body,
+#app,
 div.o876structure,
 table.o876structure {
     height: 100%;
@@ -16,6 +17,17 @@ table.o876structure {
     padding: 0;
     margin: 0;
 }
+
+/*
+ * `#app` is in that list for a reason that is easy to undo by accident.
+ *
+ * The layout is a chain of `height: 100%`, and every link has to be in it or
+ * the whole thing collapses to nothing. Vue 2 mounted with `el:` which
+ * *replaced* the mount element, so the app's root was a direct child of
+ * `<body>`; Vue 3 renders *inside* `#app`, adding a link the old stylesheet
+ * never had to account for. Without this the menu and the status bar show and
+ * the screen between them is zero pixels tall.
+ */
 
 table.o876structure > tbody > tr > td {
     padding: 0;

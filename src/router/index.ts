@@ -5,13 +5,17 @@ import AnimationBuilderView from '../views/AnimationBuilderView.vue';
 import BlockBrowserView from '../views/BlockBrowserView.vue';
 import BlockBuilderView from '../views/BlockBuilderView.vue';
 import LevelGridView from '../views/LevelGridView.vue';
+import MarkerManagerView from '../views/MarkerManagerView.vue';
 import LevelListView from '../views/LevelListView.vue';
 import NotYetView from '../views/NotYetView.vue';
 import SettingsView from '../views/SettingsView.vue';
+import TagManagerView from '../views/TagManagerView.vue';
 import ThingBrowserView from '../views/ThingBrowserView.vue';
 import ThingBuilderView from '../views/ThingBuilderView.vue';
 import TileBrowserView from '../views/TileBrowserView.vue';
+import ThingSideView from '../views/ThingSideView.vue';
 import TileLoaderView from '../views/TileLoaderView.vue';
+import UtilPanelView from '../views/UtilPanelView.vue';
 
 /**
  * Every route the old editor had, transcribed from
@@ -35,26 +39,10 @@ const routes: RouteRecordRaw[] = [
     // The grid editor and its four side panels — phase 4.
     { path: '/level/blocks', components: { default: LevelGridView, side: BlockBrowserView } },
     { path: '/level/things', components: { default: LevelGridView, side: ThingBrowserView } },
-    {
-        path: '/level/tags',
-        components: { default: LevelGridView, side: NotYetView },
-        meta: { title: 'Tags', phase: 'the tag panel, still to come' },
-    },
-    {
-        path: '/level/marks',
-        components: { default: LevelGridView, side: NotYetView },
-        meta: { title: 'Marks', phase: 'the marker panel, still to come' },
-    },
-    {
-        path: '/level/utilpanel',
-        components: { default: LevelGridView, side: NotYetView },
-        meta: { title: 'Utilities', phase: 'the utility panel, still to come' },
-    },
-    {
-        path: '/view-thing',
-        components: { default: LevelGridView, side: NotYetView },
-        meta: { title: 'Thing', phase: 'the thing panel, still to come' },
-    },
+    { path: '/level/tags', components: { default: LevelGridView, side: TagManagerView } },
+    { path: '/level/marks', components: { default: LevelGridView, side: MarkerManagerView } },
+    { path: '/level/utilpanel', components: { default: LevelGridView, side: UtilPanelView } },
+    { path: '/view-thing', components: { default: LevelGridView, side: ThingSideView } },
 
     // Tiles and animation.
     { path: '/load-tiles', components: { default: TileLoaderView, side: TileBrowserView } },

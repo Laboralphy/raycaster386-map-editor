@@ -79,6 +79,22 @@ describe('the application', () => {
         expect((await boot('/build-thing/0')).text()).toContain('Thing Builder');
     });
 
+    /**
+     * The layout is a chain of `height: 100%` and every link has to be in it.
+     * Vue 3 mounts *inside* `#app` where Vue 2 replaced it, so the mount point
+     * is a link the old stylesheet never had — and without it the menu and the
+     * status bar render while everything between them is zero pixels tall.
+     *
+     * happy-dom computes no layout, so this is the most a test can do: it pins
+     * the fix, which nothing else would catch.
+     */
+    it('keeps the mount point in the full-height chain', async () => {
+        const { readFile } = await import('node:fs/promises');
+        const css = await readFile('src/styles/structure.css', 'utf8');
+        const chain = css.slice(0, css.indexOf('height: 100%'));
+        expect(chain).toContain('#app');
+    });
+
     it('resolves every declared route to a component', async () => {
         const { router } = await import('../../src/router/index.ts');
         for (const route of router.options.routes) {
