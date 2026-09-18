@@ -1,0 +1,63 @@
+/*
+ * Ported from `_OLD_MAPEDIT_/src/styles/base.css`.
+ *
+ * The breakpoints are not decoration: the whole UI is sized in `em`, so scaling
+ * the root font size from 8px to 12px is how the editor zooms to fit a screen.
+ * Changing these changes the size of every panel in the app.
+ */
+
+body {
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    background-color: #999;
+}
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+    body {
+        font-size: 8px;
+    }
+}
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {
+    body {
+        font-size: 9px;
+    }
+}
+
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+    body {
+        font-size: 10px;
+    }
+}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+    body {
+        font-size: 11px;
+    }
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+    body {
+        font-size: 12px;
+    }
+}
+
+.hint {
+    font-family: Arial, sans-serif;
+    font-style: italic;
+    color: rgb(64, 64, 64);
+}
+
+.hint:before {
+    content: '(';
+}
+
+.hint:after {
+    content: ')';
+}

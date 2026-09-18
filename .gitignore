@@ -25,3 +25,6 @@ dist-ssr
 
 # The original Vue 2 editor, kept as reference. See README.
 _OLD_MAPEDIT_/
+
+# Level vault: local working data, seeded from the original editor.
+vault/

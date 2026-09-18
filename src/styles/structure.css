@@ -1,0 +1,46 @@
+/*
+ * Ported from `_OLD_MAPEDIT_/src/styles/o876structure/o876structure.css`.
+ *
+ * The layout primitives: a full-height table where one row takes the remaining
+ * height and scrolls. Table-based, and left that way deliberately — this is a
+ * transcription, and rebuilding the layout in grid is a change to make once the
+ * editor works, not while porting it.
+ */
+
+html,
+body,
+div.o876structure,
+table.o876structure {
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+table.o876structure > tbody > tr > td {
+    padding: 0;
+    margin: 0;
+    border: none;
+}
+
+tr.floatingHeight {
+    height: 100%;
+}
+
+tr.floatingHeight > td {
+    height: 0;
+}
+
+tr.floatingHeight > td > div {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+tr.floatingWidth {
+    width: 0;
+}
+
+tr.floatingWidth > td > div {
+    width: 100%;
+}

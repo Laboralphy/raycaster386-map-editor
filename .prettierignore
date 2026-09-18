@@ -1,0 +1,8 @@
+dist/
+node_modules/
+vault/
+
+# The Vue 2 original, kept as a reference to read. Not ours to format.
+_OLD_MAPEDIT_/
+
+package-lock.json
