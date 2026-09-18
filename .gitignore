@@ -28,3 +28,6 @@ _OLD_MAPEDIT_/
 
 # Level vault: local working data, seeded from the original editor.
 vault/
+
+# vitest JSON reporter output
+.vitest/

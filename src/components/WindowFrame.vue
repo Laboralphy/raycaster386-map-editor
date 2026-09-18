@@ -17,7 +17,9 @@ defineProps<{ caption?: string }>();
         <tbody>
             <tr class="titlebar">
                 <td>
-                    <div><h1>{{ caption }}</h1></div>
+                    <div>
+                        <h1>{{ caption }}</h1>
+                    </div>
                 </td>
             </tr>
             <tr class="toolbar">

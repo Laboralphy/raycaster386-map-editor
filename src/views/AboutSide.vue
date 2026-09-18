@@ -11,7 +11,11 @@ import WindowFrame from '../components/WindowFrame.vue';
                 <code>&#64;laboralphy/raycaster386</code>, the published engine library.
             </p>
             <p>
-                <a href="https://github.com/Laboralphy/raycaster-386" target="_blank" rel="noopener">
+                <a
+                    href="https://github.com/Laboralphy/raycaster-386"
+                    target="_blank"
+                    rel="noopener"
+                >
                     The engine on GitHub
                 </a>
             </p>

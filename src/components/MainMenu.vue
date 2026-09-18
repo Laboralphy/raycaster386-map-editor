@@ -36,7 +36,13 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const main: readonly MenuEntry[] = [
-    { icon: mdiGrid, route: '/level/blocks', highlight: /^\/level\//, caption: 'Level', title: 'Level editor' },
+    {
+        icon: mdiGrid,
+        route: '/level/blocks',
+        highlight: /^\/level\//,
+        caption: 'Level',
+        title: 'Level editor',
+    },
     {
         icon: mdiFolderMultipleImage,
         route: '/load-tiles',
@@ -73,8 +79,18 @@ const tools: readonly MenuEntry[] = [
         caption: 'Blocks',
         title: 'Display the block browser',
     },
-    { icon: mdiTag, route: '/level/tags', caption: 'Tags', title: 'Put tags on the map to add some in-game behavior' },
-    { icon: mdiShape, route: '/level/marks', caption: 'Marks', title: 'Put visual marks on the map' },
+    {
+        icon: mdiTag,
+        route: '/level/tags',
+        caption: 'Tags',
+        title: 'Put tags on the map to add some in-game behavior',
+    },
+    {
+        icon: mdiShape,
+        route: '/level/marks',
+        caption: 'Marks',
+        title: 'Put visual marks on the map',
+    },
     {
         icon: mdiChessRook,
         route: '/level/things',

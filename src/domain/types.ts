@@ -1,4 +1,4 @@
-import type { MapEditLevel } from '@laboralphy/raycaster386/mapedit';
+import type { MapEditCell, MapEditLevel } from '@laboralphy/raycaster386/mapedit';
 
 /**
  * The editor's document model.
@@ -182,11 +182,30 @@ export interface EditorLevel {
 }
 
 /**
+ * The wire type, with one field corrected.
+ *
+ * `MapEditCell['mark']` is typed `{ color: number; shape: number }`, but every
+ * real save stores CSS colour names there — `"cyan"`, `"red"` — because that is
+ * what the old marker panel wrote. The library's type is simply inaccurate
+ * about data the library itself never reads: the converter drops `mark`
+ * entirely, so nothing downstream can care.
+ *
+ * (`MapEditCell` also types `block` and `upperblock` as required, and real
+ * saves frequently omit them. That direction is harmless here — the document
+ * always has them — so it needs no patch, only the note in `EditorCell`.)
+ *
+ * Both are worth reporting upstream. Until then, patching the one field keeps
+ * the assertion below meaningful rather than deleting it.
+ */
+type WireCell = Omit<MapEditCell, 'mark'> & { mark?: EditorMark };
+type WireLevel = Omit<MapEditLevel, 'grid'> & { grid: WireCell[][] };
+
+/**
  * The compiler proving that a document can be converted without a mapper.
  *
  * If this stops compiling, `serialise.ts` has stopped being a plain deep clone
  * and something above it will have started lying about the save format.
  */
-type _DocumentIsWireCompatible = EditorLevel extends MapEditLevel ? true : never;
+type _DocumentIsWireCompatible = EditorLevel extends WireLevel ? true : never;
 const _documentIsWireCompatible: _DocumentIsWireCompatible = true;
 void _documentIsWireCompatible;

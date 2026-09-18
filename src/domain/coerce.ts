@@ -30,7 +30,11 @@ export function toBool(value: unknown, fallback = false): boolean {
 }
 
 export function toStr(value: unknown, fallback = ''): string {
-    return typeof value === 'string' ? value : value === undefined || value === null ? fallback : String(value);
+    return typeof value === 'string'
+        ? value
+        : value === undefined || value === null
+          ? fallback
+          : String(value);
 }
 
 /** A tile id, or null for "no tile on this face". */

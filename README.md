@@ -5,101 +5,169 @@ built on the published library rather than a copy of it.
 
 It replaces `apps/mapedit` from the original `o876-raycaster-engine` — a Vue 2
 app whose templates encode years of UX decisions, and whose scripts do not
-survive the move to Vue 3. The reasoning, the audit behind it and the plan are
-in the library's
+survive the move to Vue 3. The reasoning and the audit behind it are in the
+library's
 [MAPEDIT_ANALYSIS.md](https://github.com/Laboralphy/raycaster-386/blob/master/documentation/MAPEDIT_ANALYSIS.md).
 
-**Status: scaffold.** Step 1 of that plan — prove the dependency — is done.
-Nothing is built on it yet.
+**Status: phase 1 done — the chrome, the document and the vault.** The editor
+opens the four real mansion levels, holds them in a typed document model, and
+writes them back in a form the shipped converter still accepts. The grid editor
+and the builders are not migrated yet; their routes exist and say so.
 
 ## Stack
 
-| Piece | Choice |
-|---|---|
-| Build | Vite 8 |
-| UI | Vue 3, Composition API, `<script setup>` |
-| State | Pinia |
-| Routing | vue-router |
-| Language | TypeScript, strict |
-| Engine | `@laboralphy/raycaster386` from npm |
-| Backend | Koa, four routes — not written yet |
+| Piece    | Choice                                   |
+| -------- | ---------------------------------------- |
+| Build    | Vite 8                                   |
+| UI       | Vue 3, Composition API, `<script setup>` |
+| State    | Pinia                                    |
+| Routing  | vue-router                               |
+| Language | TypeScript, strict                       |
+| Engine   | `@laboralphy/raycaster386` from npm      |
+| Icons    | `@mdi/js` paths + a local `SvgIcon.vue`  |
+| Backend  | Koa 3, five vault routes                 |
 
 ## Running it
 
+Two processes: the vault server, and Vite proxying `/vault` to it.
+
 ```bash
 npm install
-npm run dev       # http://localhost:5173
-npm run build     # vue-tsc typecheck, then a production build
-npm run preview   # serve the production build
+npm run serve     # the vault on :8080, reading ./vault
+npm run dev       # the app on :5173
 ```
 
-The one route renders a hard-coded level through the library, orbiting slowly.
-If that draws, the dependency works in both a dev server and a production
-bundle — which is all this scaffold claims.
+The server runs straight from TypeScript — Node strips the types — so there is
+no build step for it, and nothing in `server/` may use syntax that needs
+emitted code (no enums, no namespaces, no constructor parameter properties).
+`tsconfig.server.json` sets `erasableSyntaxOnly` so that is a type error rather
+than a crash at startup.
+
+```bash
+npm run check     # typecheck, lint, format, test, build — the pre-commit gate
+npm run test      # tests only
+npm run build     # production bundle
+```
+
+In production the same Koa process serves the built app and the API, so the
+client uses the same relative `/vault` URLs either way.
+
+## The vault
+
+A directory of level directories, and the format is inherited — the four levels
+the original editor produced load unchanged:
+
+```
+vault/<level>/level.json        the document, images replaced by file names
+vault/<level>/tiles/<md5>.png   the images
+```
+
+The editor holds tile images as inline data URLs; the server splits them out on
+save and puts them back on load (`server/vault/blobz.ts`, a port of the
+original's `json-blobz`). MD5 naming, two-space JSON indent and key order are a
+compatibility contract, not style — `tests/server/vault.test.ts` asserts a
+loaded level saves back byte-identical.
+
+`vault/` is **gitignored**, seeded by copying from
+`o876-raycaster-engine/_SAVE_FILES/vault/local/maps`. Those four levels are the
+only real editor data that exists; copy them, never move them.
+
+Set `MAPEDIT_VAULT` to point elsewhere, `MAPEDIT_PORT` to change the port.
 
 ## Layout
 
 ```
 src/
-  level/demoLevel.ts    the hard-coded level the preview draws
-  views/PreviewView.vue the dependency proof: Renderer into a canvas
-  stores/preview.ts     Pinia, wired and doing almost nothing yet
-  router.ts             one route
-  assets/textures/      walls.png and flats.png, from the library's simple demo
+  domain/        the document model — types, parse, serialise, ids, reference
+                 tables. No Vue, no fetch, so its tests run in milliseconds.
+  stores/        level.ts (the document) and editor.ts (everything else)
+  services/      vaultClient.ts — the four calls the editor makes
+  components/    the chrome: WindowFrame, MyButton, SvgIcon, menus, popup
+  views/         one per route; NotYetView names the phase that brings the rest
+server/          the Koa vault: routes, blob splitting, path validation
+shared/api.ts    the one type both sides import
+tests/           domain/ and server/ in Node, components/ in happy-dom
 ```
+
+### The document model
+
+`src/domain/types.ts` narrows the library's `MapEdit*` types so every numeric
+field is `number` — real saves store some of them as strings, because the old
+editor bound them to text inputs. Narrowing is safe in both directions that
+matter, and a compile-time assertion in that file proves an `EditorLevel` is
+still a valid `MapEditLevel`, so `serialise()` is a deep clone rather than a
+mapper and cannot drift.
+
+Two of the library's types are inaccurate about real saves, and are patched
+locally with a note: `MapEditCell.mark.color` is typed `number` but holds CSS
+colour names, and `block`/`upperblock` are typed as required but are frequently
+absent. Both are worth reporting upstream.
+
+## What it guarantees
+
+`tests/domain/roundtrip.test.ts` is the acceptance test: for each of the four
+real levels, the original and the re-saved document are converted through
+`convertMapEditLevel` and compared. Identical output means opening a level in
+this editor cannot silently change what the engine would load.
+
+`tests/domain/fidelity.test.ts` is stricter — it diffs the documents directly
+and fails on any difference outside a reviewed allowlist. The allowlist is
+exactly two things: numbers that were stored as strings, and empty cells that
+gain an explicit `block: 0`.
 
 ## The old editor
 
 `_OLD_MAPEDIT_/` holds the original Vue 2 app, copied from
 `o876-raycaster-engine/apps/mapedit`. **It is gitignored**: it is a
-specification to read, not code to ship, and the library's history already
-records what happened the last time a reference tree was committed.
+specification to read, not code to ship.
 
-What is worth taking from it, per the analysis:
+Still to take from it:
 
-- **The 38 templates.** Copy the markup, rewrite the script.
+- **The remaining templates.** Copy the markup, rewrite the script.
 - **~730 lines of framework-free canvas code** in `src/libs/` — `block-renderer`
   (306), `silly-canvas-factory` (192), `grid-renderer` (96), `tileset-splitter`
-  (37), `append-images` (35). Near-transcription plus types.
+  (37), `append-images` (35).
 - **`append-images` especially**: `@laboralphy/raycaster386/mapedit` needs an
   `ImageAppender` injected, and that file is exactly it for a browser.
 
 `libs/generate` is **not** on the list — it is already ported, and ships as
 `@laboralphy/raycaster386/mapedit`.
 
-## What comes next
+## Roadmap
 
-From the analysis's order, with step 1 done and step 2 shipped in the library:
+| Phase | Work                                                                   |
+| ----- | ---------------------------------------------------------------------- |
+| 1 ✅  | Chrome, document model, Pinia stores, Koa vault, level list, settings  |
+| 2     | Tiles: splitter, appender, tile browser, animation builder; `Siblings` |
+| 3     | Blocks and things: block renderer, builders, browsers                  |
+| 4     | The grid: `LevelGrid`, grid renderer, overlays, undo                   |
+| 5     | Preview: convert → `loadLevel` → `Renderer` in the browser             |
+| 6     | Export to a game directory                                             |
+| 7     | Validation surfaced in the UI, then the UX improvements                |
 
-3. **Type the save format, then build the Pinia store.** The save format is the
-   real domain model. `src/mapedit/types.ts` in the library already describes
-   it — `MapEditLevel` and friends — because the converter had to read it.
-4. **The grid editor.** `LevelGrid.vue` is a fifth of the old component code and
-   the thing people actually use.
-5. **Everything else**, browser by builder.
-6. **Persistence.** The Koa vault, once the shape of what is saved has settled.
+Bugs in the old editor are fixed as each piece is ported, with a comment naming
+the old file. Phase 1 fixed five, including a getter that sorted state in place
+(so opening the block browser silently reordered the exported legend) and a tile
+deletion that left dangling face references, producing a level that could no
+longer be exported.
 
 ## Decisions still open
 
-Settle these before the code that depends on them, not after:
-
-- **How exported textures reach disk.** A level compiles to a JSON plus dozens
-  of PNGs, and `generate` now runs in the browser. The analysis recommends the
-  client POSTing the blobs to the vault, which keeps RCE-100 exactly as the
-  engine expects.
-- **Icons.** `@mdi/js` plus a small local `SvgIcon.vue` rather than
-  `vue-material-design-icons`, which has never committed to Vue 3 in writing.
-- **Whether the editor edits RCE-100 directly** for simple levels.
+- **How exported textures reach disk** (phase 6). A level compiles to a JSON
+  plus dozens of PNGs, and conversion now runs in the browser. The analysis
+  recommends the client POSTing the blobs, which keeps RCE-100 unchanged.
 - **Whether the preview uses `buildObjects`**, so placed things exercise the
   same path a game uses.
 - **Whether the editor re-atlases or only compiles.**
+- **Undo's scope** (phase 4). The old one was 16 snapshots of block painting
+  only; whole-document snapshots are out, since one grid alone is 381 KB.
 
 ## On the library dependency
 
 The editor deliberately consumes `@laboralphy/raycaster386` from npm, not from a
 local checkout: it is the library's second consumer and its best test of whether
 the API reads well from outside. Gaps found here are library bugs worth fixing
-there — `Canvas.text` is already one the analysis names.
+there — `Canvas.text` is one the analysis names.
 
 When a fix cannot wait for a release, `npm link` the local checkout, but unlink
 before committing: a linked build hides packaging mistakes that only the real

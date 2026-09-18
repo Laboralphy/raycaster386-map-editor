@@ -24,7 +24,10 @@ export class VaultError extends Error {
 
 async function request(url: string, init?: RequestInit): Promise<unknown> {
     const response = await fetch(url, {
-        headers: { Accept: 'application/json', ...(init?.body ? { 'Content-Type': 'application/json' } : {}) },
+        headers: {
+            Accept: 'application/json',
+            ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        },
         ...init,
     });
     if (!response.ok) {

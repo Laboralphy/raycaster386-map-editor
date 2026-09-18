@@ -1,27 +1,27 @@
 {
-  "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.server.tsbuildinfo",
-    "target": "es2023",
-    "lib": ["ES2023"],
-    "types": ["node"],
-    "skipLibCheck": true,
+    "compilerOptions": {
+        "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.server.tsbuildinfo",
+        "target": "es2023",
+        "lib": ["ES2023"],
+        "types": ["node"],
+        "skipLibCheck": true,
 
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "allowImportingTsExtensions": true,
+        "verbatimModuleSyntax": true,
+        "moduleDetection": "force",
+        "noEmit": true,
 
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
 
-    /* Node runs these files by stripping types, never by compiling them, so
+        /* Node runs these files by stripping types, never by compiling them, so
        anything that would need emitted code is an error here rather than a
        crash at startup: no enums, no namespaces, no parameter properties. */
-    "erasableSyntaxOnly": true
-  },
-  "include": ["server/**/*.ts", "shared/**/*.ts"]
+        "erasableSyntaxOnly": true
+    },
+    "include": ["server/**/*.ts", "shared/**/*.ts"]
 }

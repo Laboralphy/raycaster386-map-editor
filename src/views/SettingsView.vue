@@ -87,7 +87,9 @@ async function save(): Promise<void> {
                 <legend>Camera Thinker</legend>
                 <div>
                     <label>Camera Thinker: <input v-model="cameraThinker" type="text" /></label>
-                    <div class="hint">Reference of the camera thinker (which controls its behavior).</div>
+                    <div class="hint">
+                        Reference of the camera thinker (which controls its behavior).
+                    </div>
                 </div>
             </fieldset>
             <fieldset>
@@ -105,15 +107,17 @@ async function save(): Promise<void> {
                         <input v-model="flagStretch" type="checkbox" />
                     </label>
                     <div class="hint">
-                        If checked, the second story wall textures will be stretched, and will appear
-                        twice taller.
+                        If checked, the second story wall textures will be stretched, and will
+                        appear twice taller.
                     </div>
                 </div>
             </fieldset>
             <fieldset>
                 <legend>Level publication</legend>
                 <div>
-                    <label>Auto-publish this level: <input v-model="flagExport" type="checkbox" /></label>
+                    <label
+                        >Auto-publish this level: <input v-model="flagExport" type="checkbox"
+                    /></label>
                     <div class="hint">
                         If checked, each time you save the level, it will also be published to the
                         local game project.

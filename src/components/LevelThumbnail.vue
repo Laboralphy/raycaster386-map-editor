@@ -45,7 +45,9 @@ const dateString = computed(() => {
         <img :src="source" :alt="`Preview of ${name}`" />
         <figcaption>
             <span class="filename">{{ name }}</span>
-            <span v-if="dateString"> - <span class="datestring">{{ dateString }}</span></span>
+            <span v-if="dateString">
+                - <span class="datestring">{{ dateString }}</span></span
+            >
         </figcaption>
     </figure>
 </template>

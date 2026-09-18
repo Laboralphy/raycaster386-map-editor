@@ -22,9 +22,7 @@ function maxId(ids: readonly number[]): number {
 /** Tile ids are unique across walls, flats and sprites together. */
 export function nextTileId(level: EditorLevel): number {
     const { walls, flats, sprites } = level.tiles;
-    return (
-        maxId([...walls, ...flats, ...sprites].map((t) => t.id)) + 1
-    );
+    return maxId([...walls, ...flats, ...sprites].map((t) => t.id)) + 1;
 }
 
 export function nextBlockId(level: EditorLevel): number {
