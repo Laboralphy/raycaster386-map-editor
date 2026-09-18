@@ -2,10 +2,10 @@ import type { MapEditLevel } from '@laboralphy/raycaster386/mapedit';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { createEmptyLevel } from '../domain/defaults';
-import { nextTileId } from '../domain/ids';
+import { nextBlockId, nextThingId, nextTileId } from '../domain/ids';
 import { parseLevel } from '../domain/parse';
 import { toMapEditLevel } from '../domain/serialise';
-import type { EditorLevel, EditorTile, TileType } from '../domain/types';
+import type { EditorBlock, EditorLevel, EditorThing, EditorTile, TileType } from '../domain/types';
 import * as vault from '../services/vaultClient';
 
 /**
@@ -226,6 +226,108 @@ export const useLevelStore = defineStore('level', () => {
         }
     }
 
+    // --- blocks and things --------------------------------------------------
+
+    function findBlock(id: number): EditorBlock | undefined {
+        return doc.value.blocks.find((b) => b.id === id);
+    }
+
+    function findThing(id: number): EditorThing | undefined {
+        return doc.value.things.find((t) => t.id === id);
+    }
+
+    /**
+     * Creates a block, or replaces one that exists.
+     *
+     * `id` 0 means "new" — the same convention the old routes used, where
+     * `/build-block/0` was the create form. The preview is rendered by the
+     * caller and passed in: it needs a canvas, and this store stays free of the
+     * DOM so its tests can run in Node.
+     */
+    function upsertBlock(block: Omit<EditorBlock, 'id'> & { id?: number }): number {
+        const id = block.id && block.id > 0 ? block.id : nextBlockId(doc.value);
+        const value: EditorBlock = { ...block, id };
+        const at = doc.value.blocks.findIndex((b) => b.id === id);
+        if (at >= 0) {
+            doc.value.blocks[at] = value;
+        } else {
+            doc.value.blocks.push(value);
+        }
+        return id;
+    }
+
+    /**
+     * Deletes a block and clears the cells that used it.
+     *
+     * The old `DESTROY_BLOCK` reset `cell.block` but left `cell.upperblock`
+     * pointing at the deleted id, so a second storey kept a block that no
+     * longer existed — and the converter reads the upper grid the same way it
+     * reads the lower one.
+     */
+    function deleteBlock(id: number): boolean {
+        const at = doc.value.blocks.findIndex((b) => b.id === id);
+        if (at < 0) {
+            return false;
+        }
+        doc.value.blocks.splice(at, 1);
+        for (const row of doc.value.grid) {
+            for (const cell of row) {
+                if (cell.block === id) {
+                    cell.block = 0;
+                    cell.modified = true;
+                }
+                if (cell.upperblock === id) {
+                    cell.upperblock = 0;
+                    cell.modified = true;
+                }
+            }
+        }
+        return true;
+    }
+
+    function upsertThing(thing: Omit<EditorThing, 'id'> & { id?: number }): number {
+        const id = thing.id && thing.id > 0 ? thing.id : nextThingId(doc.value);
+        const value: EditorThing = { ...thing, id };
+        const at = doc.value.things.findIndex((t) => t.id === id);
+        if (at >= 0) {
+            doc.value.things[at] = value;
+        } else {
+            doc.value.things.push(value);
+        }
+        return id;
+    }
+
+    /** Deletes a thing template and every placement of it on the grid. */
+    function deleteThing(id: number): boolean {
+        const at = doc.value.things.findIndex((t) => t.id === id);
+        if (at < 0) {
+            return false;
+        }
+        doc.value.things.splice(at, 1);
+        for (const row of doc.value.grid) {
+            for (const cell of row) {
+                const before = cell.things.length;
+                cell.things = cell.things.filter((placed) => placed.id !== id);
+                if (cell.things.length !== before) {
+                    cell.modified = true;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** Reorders the thing palette. Order is cosmetic; nothing indexes into it. */
+    function moveThing(idSource: number, idTarget: number): void {
+        const things = doc.value.things;
+        const from = things.findIndex((t) => t.id === idSource);
+        const to = things.findIndex((t) => t.id === idTarget);
+        if (from < 0 || to < 0 || from === to) {
+            return;
+        }
+        const [moved] = things.splice(from, 1);
+        things.splice(to, 0, moved);
+    }
+
     // --- settings, as the Settings screen edits them -----------------------
 
     /**
@@ -284,6 +386,13 @@ export const useLevelStore = defineStore('level', () => {
         allTiles,
         visibleTiles,
         findTile,
+        findBlock,
+        findThing,
+        upsertBlock,
+        deleteBlock,
+        upsertThing,
+        deleteThing,
+        moveThing,
         tileUsage,
         addTiles,
         moveTile,

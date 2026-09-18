@@ -9,6 +9,12 @@
  * A block's `phys` is an index into `PHYS_TABLE`, not one of the engine's
  * `PHYS_*` constants — the two happen to agree today, and the converter maps
  * index to constant. Keep reading it as an index.
+ *
+ * **The labels for indices 6 and 7 are corrected here.** The old table called 6
+ * "Door right" and 7 "Door left", but `convertMapEditLevel` maps 6 to
+ * `@PHYS_DOOR_LEFT` and 7 to `@PHYS_DOOR_RIGHT` — so picking "Door right" in
+ * the old editor built a door the engine slides left. Only the text changes;
+ * the indices, and therefore every existing level, are untouched.
  */
 
 /** Which faces a block of this kind actually uses: a subset of `fcnews`. */
@@ -66,15 +72,15 @@ export const PHYS_TABLE: readonly PhysEntry[] = Object.freeze([
     },
     {
         id: 6,
-        label: 'Door right',
-        desc: 'This is a door that slides to the right when opened',
+        label: 'Door left',
+        desc: 'This is a door that slides to the left when opened',
         tiles: 'fcnews',
         offset: false,
     },
     {
         id: 7,
-        label: 'Door left',
-        desc: 'This is a door that slides to the left when opened',
+        label: 'Door right',
+        desc: 'This is a door that slides to the right when opened',
         tiles: 'fcnews',
         offset: false,
     },

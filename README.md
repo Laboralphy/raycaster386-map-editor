@@ -9,11 +9,11 @@ survive the move to Vue 3. The reasoning and the audit behind it are in the
 library's
 [MAPEDIT_ANALYSIS.md](https://github.com/Laboralphy/raycaster-386/blob/master/documentation/MAPEDIT_ANALYSIS.md).
 
-**Status: phase 2 done — tiles.** The editor opens the four real mansion
-levels, holds them in a typed document model, imports and manages their tiles,
-and writes everything back in a form the shipped converter still accepts. The
-grid editor and the block/thing builders are not migrated yet; their routes
-exist and say so.
+**Status: phase 3 done — blocks and things.** The editor opens the four real
+mansion levels, holds them in a typed document model, imports and manages their
+tiles, builds blocks and thing templates out of them, and writes everything back
+in a form the shipped converter still accepts. The grid itself is not migrated
+yet; its route exists and says so.
 
 ## Stack
 
@@ -125,9 +125,9 @@ specification to read, not code to ship.
 Still to take from it:
 
 - **The remaining templates.** Copy the markup, rewrite the script.
-- **~500 lines of framework-free canvas code** still in `src/libs/` —
-  `block-renderer` (306), `silly-canvas-factory` (192), `grid-renderer` (96).
-  `tileset-splitter` and `append-images` are ported.
+- **~290 lines of framework-free canvas code** still in `src/libs/` —
+  `silly-canvas-factory` (192) and `grid-renderer` (96), both of which the grid
+  needs. `tileset-splitter`, `append-images` and `block-renderer` are ported.
 
 `libs/generate` is **not** on the list — it is already ported, and ships as
 `@laboralphy/raycaster386/mapedit`.
@@ -138,20 +138,29 @@ Still to take from it:
 | ----- | ------------------------------------------------------------------------- |
 | 1 ✅  | Chrome, document model, Pinia stores, Koa vault, level list, settings     |
 | 2 ✅  | Tiles: splitter, appender, browser, loader, animation builder, `Siblings` |
-| 3     | Blocks and things: block renderer, builders, browsers                     |
+| 3 ✅  | Blocks and things: block renderer, builders, browsers                     |
 | 4     | The grid: `LevelGrid`, grid renderer, overlays, undo                      |
 | 5     | Preview: convert → `loadLevel` → `Renderer` in the browser                |
 | 6     | Export to a game directory                                                |
 | 7     | Validation surfaced in the UI, then the UX improvements                   |
 
 Bugs in the old editor are fixed as each piece is ported, with a comment naming
-the old file. Nine so far — a getter that sorted state in place (so opening the
-block browser silently reordered the exported legend); a tile deletion that left
-dangling face references, producing a level that could no longer be exported; an
-animation Delete button that threw on every click because its action and its
-mutation disagreed about a payload key; an importer that reversed every sheet it
-imported; and a splitter that reused one scratch canvas, so a partial edge tile
-kept the previous tile's pixels.
+the old file. Twelve so far, including: a getter that sorted state in place (so
+opening the block browser silently reordered the exported legend); a tile
+deletion that left dangling face references, producing a level that could no
+longer be exported; a block deletion that cleared the lower storey of a cell but
+not the upper; an animation Delete button that threw on every click because its
+action and its mutation disagreed about a payload key; an importer that reversed
+every sheet it imported; and a splitter that reused one scratch canvas, so a
+partial edge tile kept the previous tile's pixels.
+
+**One is user-visible and worth knowing about.** The phys table labelled index 6
+"Door right" and index 7 "Door left", but the converter maps 6 to
+`@PHYS_DOOR_LEFT` and 7 to `@PHYS_DOOR_RIGHT` — so a door built as "Door right"
+in the old editor slid left in the game. The labels are corrected here and
+`tests/domain/reference.test.ts` pins the table against the engine's own
+constants. Only the text changed: the indices, and therefore every existing
+level, are untouched.
 
 ## Decisions still open
 

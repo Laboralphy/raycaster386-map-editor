@@ -2,9 +2,13 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import AboutSide from '../views/AboutSide.vue';
 import AboutView from '../views/AboutView.vue';
 import AnimationBuilderView from '../views/AnimationBuilderView.vue';
+import BlockBrowserView from '../views/BlockBrowserView.vue';
+import BlockBuilderView from '../views/BlockBuilderView.vue';
 import LevelListView from '../views/LevelListView.vue';
 import NotYetView from '../views/NotYetView.vue';
 import SettingsView from '../views/SettingsView.vue';
+import ThingBrowserView from '../views/ThingBrowserView.vue';
+import ThingBuilderView from '../views/ThingBuilderView.vue';
 import TileBrowserView from '../views/TileBrowserView.vue';
 import TileLoaderView from '../views/TileLoaderView.vue';
 
@@ -30,13 +34,13 @@ const routes: RouteRecordRaw[] = [
     // The grid editor and its four side panels — phase 4.
     {
         path: '/level/blocks',
-        components: notYet,
+        components: { default: NotYetView, side: BlockBrowserView },
         meta: { title: 'Level grid', phase: 'phase 4 (the grid)' },
     },
     {
         path: '/level/things',
-        components: notYet,
-        meta: { title: 'Things', phase: 'phase 4 (the grid)' },
+        components: { default: NotYetView, side: ThingBrowserView },
+        meta: { title: 'Level grid', phase: 'phase 4 (the grid)' },
     },
     {
         path: '/level/tags',
@@ -60,16 +64,8 @@ const routes: RouteRecordRaw[] = [
     { path: '/build-anim', components: { default: AnimationBuilderView, side: TileBrowserView } },
 
     // Blocks and things — phase 3.
-    {
-        path: '/build-block/:id',
-        components: { default: NotYetView, side: TileBrowserView },
-        meta: { title: 'Block builder', phase: 'phase 3 (blocks and things)' },
-    },
-    {
-        path: '/build-thing/:id',
-        components: { default: NotYetView, side: TileBrowserView },
-        meta: { title: 'Thing builder', phase: 'phase 3 (blocks and things)' },
-    },
+    { path: '/build-block/:id', components: { default: BlockBuilderView, side: TileBrowserView } },
+    { path: '/build-thing/:id', components: { default: ThingBuilderView, side: TileBrowserView } },
 
     // Ambiance — phase 5, with the renderer that shows it.
     {

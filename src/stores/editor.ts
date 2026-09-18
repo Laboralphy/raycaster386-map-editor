@@ -35,6 +35,11 @@ export const useEditorStore = defineStore('editor', () => {
      */
     const tileBrowserType = ref<TileType>('wall');
 
+    /** The block the browser has selected, and the grid would paint with. */
+    const blockBrowserSelected = ref<number | null>(null);
+    /** The thing template the browser has selected. */
+    const thingBrowserSelected = ref<number | null>(null);
+
     const popup = ref<{
         visible: boolean;
         type: PopupType;
@@ -84,6 +89,8 @@ export const useEditorStore = defineStore('editor', () => {
         busy,
         dirty,
         tileBrowserType,
+        blockBrowserSelected,
+        thingBrowserSelected,
         popup,
         popupTitle,
         setStatus,
