@@ -1,5 +1,5 @@
 import { convertMapEditLevel } from '@laboralphy/raycaster386/mapedit';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRouter, createWebHistory } from 'vue-router';
@@ -89,10 +89,15 @@ describe('the settings screen', () => {
     });
 
     /**
-     * The end-to-end point of this screen in phase 1: an edit made in the UI
-     * reaches the document, and the document still converts afterwards. A
-     * change that produced an unconvertible level would be invisible otherwise
-     * until someone tried to export.
+     * The end-to-end point of this screen: an edit made in the UI reaches the
+     * document, and the document still converts afterwards. A change that
+     * produced an unconvertible level would otherwise stay invisible until
+     * someone tried to export.
+     *
+     * Deliberately no tile-size change here — that path rescales every tile
+     * image through a canvas, which happy-dom does not implement. The rescale
+     * is covered where it can be: `tests/stores/tiles.test.ts` for the values
+     * it scales, `tests/libs/tilesetSplitter.test.ts` for the images.
      */
     it('writes an edit into the document, and the document still converts', async () => {
         const level = useLevelStore();
@@ -101,19 +106,35 @@ describe('the settings screen', () => {
         const wrapper = mountSettings();
         await wrapper.vm.$nextTick();
 
-        const numbers = wrapper.findAll('input[type="number"]');
-        await numbers[0].setValue('128');
         await wrapper.find('input[type="text"]').setValue('MyThinker');
         await wrapper.findAll('input[type="checkbox"]')[0].setValue(true);
+        await wrapper.findAll('input[type="checkbox"]')[2].setValue(true);
 
         await wrapper.findAll('a.myButton')[0].trigger('click');
+        await flushPromises();
 
-        expect(level.doc.metrics.tileWidth).toBe(128);
         expect(level.doc.actor.thinker).toBe('MyThinker');
         expect(level.doc.flags.smooth).toBe(true);
+        expect(level.doc.flags.export).toBe(true);
 
         const converted = await convertMapEditLevel(level.serialise(), stubAppender);
         expect(converted).toHaveProperty('version', 'RCE-100');
+    });
+
+    it('records a new tile size, with nothing to rescale', async () => {
+        const level = useLevelStore();
+        level.load(createEmptyLevel());
+
+        const wrapper = mountSettings();
+        await wrapper.vm.$nextTick();
+
+        const numbers = wrapper.findAll('input[type="number"]');
+        await numbers[0].setValue('128');
+        await numbers[1].setValue('192');
+        await wrapper.findAll('a.myButton')[0].trigger('click');
+        await flushPromises();
+
+        expect(level.doc.metrics).toEqual({ tileWidth: 128, tileHeight: 192 });
     });
 
     it('keeps tile width numeric even though the input hands back a string', () => {

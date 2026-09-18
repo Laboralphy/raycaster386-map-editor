@@ -2,21 +2,17 @@
 import { onMounted, ref } from 'vue';
 import MyButton from '../components/MyButton.vue';
 import WindowFrame from '../components/WindowFrame.vue';
+import { rescaleTile } from '../libs/tilesetSplitter';
 import { useEditorStore } from '../stores/editor';
 import { useLevelStore } from '../stores/level';
 
 /**
  * Level settings, ported from `_OLD_MAPEDIT_/src/components/Settings.vue`.
  *
- * The tile-size *rescale* — reloading every tile through a canvas and writing
- * it back at the new resolution — is deliberately not here. It belongs with the
- * rest of the tile pipeline in phase 2, and the old warning below still tells
- * the truth about what it will do once it lands.
- *
- * Until then this writes the metrics, the flags and the camera thinker, which
- * is exactly the set of fields a save stores as strings — so a load, an edit
- * and a save through this screen is the end-to-end proof that the document
- * survives a round trip.
+ * Changing the tile size rescales every wall and flat image through a canvas,
+ * and `setTileSize` scales the values measured in tile widths — block offsets,
+ * light radii, thing sizes, fog distance. Sprites keep their own size, as they
+ * did before: they are not laid out on the tile grid.
  */
 
 const level = useLevelStore();
@@ -29,6 +25,7 @@ const flagSmooth = ref(false);
 const flagStretch = ref(false);
 const flagExport = ref(false);
 const saving = ref(false);
+const applying = ref(false);
 
 onMounted(() => {
     tileWidth.value = level.doc.metrics.tileWidth;
@@ -39,14 +36,38 @@ onMounted(() => {
     flagExport.value = level.doc.flags.export;
 });
 
-function apply(): void {
-    level.setTileSize(Number(tileWidth.value), Number(tileHeight.value));
+async function apply(): Promise<void> {
+    const width = Number(tileWidth.value);
+    const height = Number(tileHeight.value);
+    const resize = width !== level.doc.metrics.tileWidth || height !== level.doc.metrics.tileHeight;
+
+    if (resize) {
+        applying.value = true;
+        editor.setStatus('resizing tiles...');
+        try {
+            for (const type of ['wall', 'flat'] as const) {
+                const target = type === 'wall' ? height : width;
+                for (const tile of level.allTiles(type)) {
+                    const content = await rescaleTile(tile.content, width, target);
+                    level.replaceTileContent(tile.id, content, width, target);
+                }
+            }
+        } catch (e) {
+            applying.value = false;
+            editor.setStatus(`Could not resize tiles : ${(e as Error).message}`);
+            editor.showPopup((e as Error).message, 'error');
+            return;
+        }
+        applying.value = false;
+    }
+
+    level.setTileSize(width, height);
     level.setCameraThinker(cameraThinker.value);
     level.setFlag('smooth', flagSmooth.value);
     level.setFlag('stretch', flagStretch.value);
     level.setFlag('export', flagExport.value);
     editor.dirty = true;
-    editor.setStatus('Settings applied');
+    editor.setStatus(resize ? 'Settings applied, tiles resized' : 'Settings applied');
 }
 
 async function save(): Promise<void> {
@@ -126,7 +147,9 @@ async function save(): Promise<void> {
             </fieldset>
             <br />
             <div class="actions">
-                <MyButton @click="apply">Apply changes</MyButton>
+                <MyButton :disabled="applying" @click="apply">
+                    {{ applying ? 'Resizing...' : 'Apply changes' }}
+                </MyButton>
                 <MyButton :disabled="saving" @click="save">
                     {{ saving ? 'Saving...' : 'Save level' }}
                 </MyButton>
@@ -137,10 +160,6 @@ async function save(): Promise<void> {
                 Changing tile width or height will resize all existing tiles and affect texture
                 resolution and quality. It will also modify all metrics, block light radius values,
                 block offsets, and thing physical size.
-            </p>
-            <p class="hint">
-                Tile rescaling is not implemented yet: for now these fields change the recorded
-                metrics only.
             </p>
         </form>
     </WindowFrame>

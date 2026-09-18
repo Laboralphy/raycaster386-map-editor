@@ -1,9 +1,12 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import AboutSide from '../views/AboutSide.vue';
 import AboutView from '../views/AboutView.vue';
+import AnimationBuilderView from '../views/AnimationBuilderView.vue';
 import LevelListView from '../views/LevelListView.vue';
 import NotYetView from '../views/NotYetView.vue';
 import SettingsView from '../views/SettingsView.vue';
+import TileBrowserView from '../views/TileBrowserView.vue';
+import TileLoaderView from '../views/TileLoaderView.vue';
 
 /**
  * Every route the old editor had, transcribed from
@@ -52,27 +55,19 @@ const routes: RouteRecordRaw[] = [
     },
     { path: '/view-thing', components: notYet, meta: { title: 'Thing', phase: 'phase 4' } },
 
-    // Tiles and animation — phase 2.
-    {
-        path: '/load-tiles',
-        components: notYet,
-        meta: { title: 'Load tiles', phase: 'phase 2 (tiles)' },
-    },
-    {
-        path: '/build-anim',
-        components: notYet,
-        meta: { title: 'Animation builder', phase: 'phase 2 (tiles)' },
-    },
+    // Tiles and animation.
+    { path: '/load-tiles', components: { default: TileLoaderView, side: TileBrowserView } },
+    { path: '/build-anim', components: { default: AnimationBuilderView, side: TileBrowserView } },
 
     // Blocks and things — phase 3.
     {
         path: '/build-block/:id',
-        components: notYet,
+        components: { default: NotYetView, side: TileBrowserView },
         meta: { title: 'Block builder', phase: 'phase 3 (blocks and things)' },
     },
     {
         path: '/build-thing/:id',
-        components: notYet,
+        components: { default: NotYetView, side: TileBrowserView },
         meta: { title: 'Thing builder', phase: 'phase 3 (blocks and things)' },
     },
 

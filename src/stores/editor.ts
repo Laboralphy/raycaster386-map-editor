@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import type { VaultLevelSummary } from '../../shared/api';
+import type { TileType } from '../domain/types';
 import * as vault from '../services/vaultClient';
 
 /**
@@ -25,6 +26,14 @@ export const useEditorStore = defineStore('editor', () => {
     const busy = ref(false);
     /** Set when the document has changed since it was last saved. */
     const dirty = ref(false);
+
+    /**
+     * Which tile group the browser is showing.
+     *
+     * It lives here rather than in the browser component because the tile
+     * loader reads it too — what you import depends on which tab you are on.
+     */
+    const tileBrowserType = ref<TileType>('wall');
 
     const popup = ref<{
         visible: boolean;
@@ -74,6 +83,7 @@ export const useEditorStore = defineStore('editor', () => {
         statusBar,
         busy,
         dirty,
+        tileBrowserType,
         popup,
         popupTitle,
         setStatus,
