@@ -9,6 +9,10 @@ survive the move to Vue 3. The reasoning and the audit behind it are in the
 library's
 [MAPEDIT_ANALYSIS.md](https://github.com/Laboralphy/raycaster-386/blob/master/documentation/MAPEDIT_ANALYSIS.md).
 
+**Picking this up after a break?** Read
+[documentation/PROGRESS.md](documentation/PROGRESS.md) — what works, what to do
+next, and the things that are not obvious from the code.
+
 **Status: phase 4 done — the editor edits.** It opens the four real mansion
 levels, holds them in a typed document model, imports and manages their tiles,
 builds blocks and thing templates, paints them onto the map with undo and redo,
@@ -124,14 +128,14 @@ gain an explicit `block: 0`.
 `o876-raycaster-engine/apps/mapedit`. **It is gitignored**: it is a
 specification to read, not code to ship.
 
-Still to take from it:
+Every library it carried is ported, and every component but three:
 
-- **The remaining templates.** Copy the markup, rewrite the script.
-  Every component and library the analysis listed is ported. What is left in
-  `_OLD_MAPEDIT_` is `RenderView`/`RenderSide` — the 3D preview, which phase 5
-  rebuilds on the engine library rather than on the old `Engine`.
+- `RenderView` and `RenderSide` — the 3D preview, which phase 5 rebuilds on the
+  engine library rather than on the old `Engine`;
+- `AmbianceSetup` — sky, fog, brightness and colour filter, which belongs with
+  the renderer that shows what they do.
 
-`libs/generate` is **not** on the list — it is already ported, and ships as
+`libs/generate` was never on the list — it is already ported, and ships as
 `@laboralphy/raycaster386/mapedit`.
 
 ## Roadmap
