@@ -33,14 +33,23 @@ withDefaults(
 </template>
 
 <style scoped>
+/*
+ * Sized in `em` so the box tracks the root font size with the rest of the UI;
+ * at the 12px root a desktop used to get, 40x20em is the 480x240px it was.
+ *
+ * Centred with a translate rather than the original's negative margins, which
+ * were half the width and half the height written out again — three places to
+ * keep in step, and they were already in pixels while the box is not.
+ */
 div.popup {
-    width: 480px;
-    height: 240px;
-    box-shadow: 0 0 32px 16px rgba(0, 0, 0, 0.6);
+    /* Capped so the box cannot be wider than the screen, as its fixed 480px
+       was on anything narrower than that. */
+    width: min(40em, 92vw);
+    height: 20em;
+    box-shadow: 0 0 2.67em 1.33em rgba(0, 0, 0, 0.6);
     left: 50%;
     top: 50%;
-    margin-left: -240px;
-    margin-top: -120px;
+    transform: translate(-50%, -50%);
     position: absolute;
 }
 
@@ -51,7 +60,7 @@ div.popup > :deep(table.o876window) {
 }
 
 div.popup div.message {
-    margin: 16px;
+    margin: 1.33em;
     font-size: 125%;
 }
 

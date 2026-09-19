@@ -96,6 +96,32 @@ export const useEditorStore = defineStore('editor', () => {
         selectedRegion.value = { x1: -1, y1: -1, x2: -1, y2: -1 };
     }
 
+    /**
+     * Forgets everything that referred to the document being replaced.
+     *
+     * Every one of these holds a reference into the *old* level — a block id, a
+     * cell, a rectangle, a compiled copy — and all of them are meaningless
+     * against a different one. A stale `blockBrowserSelected` is the sharp
+     * edge: it is the id the grid paints with, so left alone it would fill
+     * cells of the new level with a block that does not exist in it.
+     *
+     * The undo stack is the caller's to reset, because it lives in its own
+     * store; `tileBrowserType` and `selectedTool` are deliberately kept, being
+     * preferences about the editor rather than facts about the level.
+     *
+     * @param name what the new document is called, or '' for an unsaved one
+     */
+    function resetForLevel(name: string): void {
+        levelName.value = name;
+        dirty.value = false;
+        clearRegion();
+        blockBrowserSelected.value = null;
+        thingBrowserSelected.value = null;
+        selectedThing.value = null;
+        selectedFloor.value = 0;
+        generatedLevel.value = null;
+    }
+
     const popup = ref<{
         visible: boolean;
         type: PopupType;
@@ -156,6 +182,7 @@ export const useEditorStore = defineStore('editor', () => {
         region,
         regionCells,
         clearRegion,
+        resetForLevel,
         popup,
         popupTitle,
         setStatus,

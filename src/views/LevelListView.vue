@@ -32,9 +32,7 @@ async function open(name: string): Promise<void> {
         // The undo stack belongs to the level that built it: keeping it would
         // let an undo paste cells from a different map into this one.
         history.reset();
-        editor.clearRegion();
-        editor.levelName = name;
-        editor.dirty = false;
+        editor.resetForLevel(name);
         editor.setStatus(`Level successfully loaded : ${name}`);
         await router.push('/level/blocks');
     } catch (e) {

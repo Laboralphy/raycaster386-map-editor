@@ -1,51 +1,39 @@
 /*
  * Ported from `_OLD_MAPEDIT_/src/styles/base.css`.
  *
- * The breakpoints are not decoration: the whole UI is sized in `em`, so scaling
- * the root font size from 8px to 12px is how the editor zooms to fit a screen.
- * Changing these changes the size of every panel in the app.
+ * The root font size is the whole UI's master scale: every panel, button and
+ * menu is sized in `em`, so this one number is how the editor zooms to fit a
+ * screen. Changing it changes the size of everything.
+ *
+ * The original stepped it through five width breakpoints, from 8px to 12px —
+ * and stopped there, at `min-width: 1200px`. Anything wider got 12px, so a 4K
+ * display at 100% OS scaling rendered the entire interface at the size it takes
+ * on a 1200px laptop. (CSS `px` is not a device pixel; a 4K laptop at 200%
+ * scaling reports a 1920px viewport and always looked right. It is the ceiling
+ * that was wrong, not the unit.)
+ *
+ * So it is one fluid value instead of a ladder. `rem` on the root element
+ * resolves against the browser's own default font size, which means this
+ * respects a reader who has set theirs larger rather than overriding it — the
+ * absolute `12px` could not.
  */
+
+html {
+    /*
+     * ~12px at 1200px wide, which is what the old ladder gave a desktop, up to
+     * 22px at 4K. The floor is 9px, for a phone.
+     *
+     * Browser zoom still works, though not one for one: `vw` shrinks as zoom
+     * magnifies, so only the `rem` term answers a Ctrl-+.
+     */
+    font-size: clamp(0.5625rem, 0.35vw + 0.5rem, 1.375rem);
+}
 
 body {
     padding: 0;
     margin: 0;
-    font-size: 12px;
+    font-size: 1rem;
     background-color: #999;
-}
-
-/* Extra small devices (phones, 600px and down) */
-@media only screen and (max-width: 600px) {
-    body {
-        font-size: 8px;
-    }
-}
-
-/* Small devices (portrait tablets and large phones, 600px and up) */
-@media only screen and (min-width: 600px) {
-    body {
-        font-size: 9px;
-    }
-}
-
-/* Medium devices (landscape tablets, 768px and up) */
-@media only screen and (min-width: 768px) {
-    body {
-        font-size: 10px;
-    }
-}
-
-/* Large devices (laptops/desktops, 992px and up) */
-@media only screen and (min-width: 992px) {
-    body {
-        font-size: 11px;
-    }
-}
-
-/* Extra large devices (large laptops and desktops, 1200px and up) */
-@media only screen and (min-width: 1200px) {
-    body {
-        font-size: 12px;
-    }
 }
 
 .hint {

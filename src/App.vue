@@ -50,31 +50,19 @@ const editor = useEditorStore();
 </template>
 
 <style scoped>
-/* The side panel widens with the viewport, on the same breakpoints that scale
-   the root font size. Ported from the old Application.vue. */
-@media only screen and (max-width: 600px) {
-    table.o876structure > tbody > tr > td.side-panel {
-        width: 240px;
-    }
-}
-@media only screen and (min-width: 600px) {
-    table.o876structure > tbody > tr > td.side-panel {
-        width: 280px;
-    }
-}
-@media only screen and (min-width: 768px) {
-    table.o876structure > tbody > tr > td.side-panel {
-        width: 320px;
-    }
-}
-@media only screen and (min-width: 992px) {
-    table.o876structure > tbody > tr > td.side-panel {
-        width: 360px;
-    }
-}
-@media only screen and (min-width: 1200px) {
-    table.o876structure > tbody > tr > td.side-panel {
-        width: 420px;
-    }
+/*
+ * The side panel, in `em`, so it tracks the root font size like everything
+ * else. It was a ladder of five pixel widths on the same breakpoints that
+ * scaled the root, and it stopped at 420px above 1200px — which on a 4K screen
+ * left it occupying a ninth of the width instead of a third. 35em is that same
+ * 420px at the 12px root a desktop used to get.
+ */
+table.o876structure > tbody > tr > td.side-panel {
+    /*
+     * The `vw` cap only binds below about 540px wide, where 35em of panel
+     * would otherwise leave the level editor beside it a few dozen pixels.
+     * The old ladder held it to 240px on a phone; this holds it to a share.
+     */
+    width: min(35em, 60vw);
 }
 </style>
