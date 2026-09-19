@@ -27,7 +27,9 @@ dist-ssr
 _OLD_MAPEDIT_/
 
 # Level vault: local working data, seeded from the original editor.
-vault/
+# Anchored: an unanchored `vault/` also matches `server/vault/`, whose source
+# then never gets committed.
+/vault/
 
 # vitest JSON reporter output
 .vitest/

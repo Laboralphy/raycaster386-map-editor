@@ -6,6 +6,7 @@ import { nextBlockId, nextThingId, nextTileId } from '../domain/ids';
 import { parseLevel } from '../domain/parse';
 import { toMapEditLevel } from '../domain/serialise';
 import type {
+    EditorAmbiance,
     EditorBlock,
     EditorCell,
     EditorLevel,
@@ -659,6 +660,36 @@ export const useLevelStore = defineStore('level', () => {
         doc.value.actor.thinker = thinker;
     }
 
+    /**
+     * Replaces the ambiance wholesale.
+     *
+     * Copied rather than assigned: the panel edits a draft, and keeping the
+     * reference would let every keystroke reach the document — which is the
+     * bug `ThingBuilder` had, where cancelling the form still changed the
+     * level. The sky is a data URL, so the clone is a deep one.
+     */
+    function setAmbiance(ambiance: EditorAmbiance): void {
+        doc.value.ambiance = {
+            sky: ambiance.sky,
+            fog: { distance: Number(ambiance.fog.distance), color: ambiance.fog.color },
+            filter: { enabled: ambiance.filter.enabled, color: ambiance.filter.color },
+            brightness: Number(ambiance.brightness),
+        };
+    }
+
+    /**
+     * Stores the level's thumbnail, as a data URL.
+     *
+     * Written by the preview on its way out, and served by the vault as
+     * `/vault/<name>.jpg` — it is why the level list has pictures. Deliberately
+     * outside the undo history: it is a by-product of looking at the level, and
+     * an undo that silently reverted the thumbnail would confuse the picture
+     * with the document.
+     */
+    function setPreview(dataUrl: string): void {
+        doc.value.preview = dataUrl;
+    }
+
     // --- persistence -------------------------------------------------------
 
     async function loadFromVault(name: string): Promise<void> {
@@ -718,6 +749,8 @@ export const useLevelStore = defineStore('level', () => {
         setTileSize,
         setFlag,
         setCameraThinker,
+        setAmbiance,
+        setPreview,
         loadFromVault,
         saveToVault,
     };

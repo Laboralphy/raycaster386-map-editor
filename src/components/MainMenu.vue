@@ -24,10 +24,11 @@ import { useRouter } from 'vue-router';
 /**
  * The top navigation, ported from `_OLD_MAPEDIT_/src/components/MainMenu.vue`.
  *
- * Both strips are transcribed entry for entry, including the routes that are
- * not built yet — they land on `NotYetView`, which says which phase brings
- * them. Half-porting the menu and adding entries later would mean revisiting
- * this file for every screen.
+ * Both strips are transcribed entry for entry. While screens were still
+ * missing, their entries landed on `NotYetView` and said which phase would
+ * bring them; as of phase 5 every entry reaches a real screen. Half-porting the
+ * menu and adding entries later would have meant revisiting this file for every
+ * screen.
  *
  * The old `[username]` indicator is gone with `/user.json`: the editor is
  * single-user by decision.

@@ -1,13 +1,15 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import AboutSide from '../views/AboutSide.vue';
 import AboutView from '../views/AboutView.vue';
+import AmbianceSetupView from '../views/AmbianceSetupView.vue';
 import AnimationBuilderView from '../views/AnimationBuilderView.vue';
 import BlockBrowserView from '../views/BlockBrowserView.vue';
 import BlockBuilderView from '../views/BlockBuilderView.vue';
 import LevelGridView from '../views/LevelGridView.vue';
 import MarkerManagerView from '../views/MarkerManagerView.vue';
 import LevelListView from '../views/LevelListView.vue';
-import NotYetView from '../views/NotYetView.vue';
+import RenderSideView from '../views/RenderSideView.vue';
+import RenderView from '../views/RenderView.vue';
 import SettingsView from '../views/SettingsView.vue';
 import TagManagerView from '../views/TagManagerView.vue';
 import ThingBrowserView from '../views/ThingBrowserView.vue';
@@ -22,16 +24,14 @@ import UtilPanelView from '../views/UtilPanelView.vue';
  * `_OLD_MAPEDIT_/src/index.js`.
  *
  * Each has two named views — the main screen and the side panel — which is what
- * the two-column layout in `App.vue` renders. Routes whose screens have not
- * been migrated yet point at `NotYetView` and carry the phase that brings them,
- * so the menu could be ported whole instead of grown one entry at a time.
+ * the two-column layout in `App.vue` renders. Until phase 5 the routes that had
+ * no screen yet pointed at `NotYetView` and carried the phase that would bring
+ * them, so the menu could be ported whole instead of grown one entry at a time.
+ * Every one of them is now built, and `NotYetView` has no remaining user.
  *
  * History mode rather than the old hash mode; the Koa server has an SPA
  * fallback for it.
  */
-
-/** Both views of a route that has not been migrated yet. `meta` says which. */
-const notYet = { default: NotYetView, side: NotYetView };
 
 const routes: RouteRecordRaw[] = [
     { path: '/', name: 'about', components: { default: AboutView, side: AboutSide } },
@@ -52,17 +52,9 @@ const routes: RouteRecordRaw[] = [
     { path: '/build-block/:id', components: { default: BlockBuilderView, side: TileBrowserView } },
     { path: '/build-thing/:id', components: { default: ThingBuilderView, side: TileBrowserView } },
 
-    // Ambiance — phase 5, with the renderer that shows it.
-    {
-        path: '/setup-ambiance',
-        components: notYet,
-        meta: { title: 'Ambiance', phase: 'phase 5 (preview)' },
-    },
-    {
-        path: '/render',
-        components: notYet,
-        meta: { title: 'Render', phase: 'phase 5 (preview)' },
-    },
+    // The preview, and the ambiance it is the only way to judge — phase 5.
+    { path: '/setup-ambiance', components: { default: AmbianceSetupView, side: AboutSide } },
+    { path: '/render', components: { default: RenderView, side: RenderSideView } },
 
     // Built.
     { path: '/list-levels', components: { default: LevelListView, side: AboutSide } },

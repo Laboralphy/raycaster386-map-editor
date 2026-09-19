@@ -1,7 +1,7 @@
 # Where the editor stands
 
 A handoff note: what works, what to do next, and the things that are not
-obvious from the code. Written 2026-09-18, at the end of phase 4.
+obvious from the code. Written 2026-09-18, at the end of phase 5.
 
 The README is the project's documentation; this is the "pick it up from here".
 If you are a fresh session with no context, read this first, then the README.
@@ -19,6 +19,30 @@ So the shell is known good. What is still unverified is the _detail_ of anything
 drawn on a canvas: the tests assert _where_ things are drawn, never what they
 look like. One small glitch was noticed and judged not worth chasing at the
 time; it is not written down, so whoever sees it next should describe it here.
+
+**The 3D preview was confirmed working in a browser on 2026-09-18.** Picture,
+WASD, mouse look, wall collision and opening a door with E were all checked by
+hand and all work. The one thing that came back wrong was walking pace, and it
+is fixed — see below.
+
+It had also been verified headless first: both `mans-test-ai` and `mans-intro`
+converted, loaded and rendered outside the app, with correct textures, 63
+sprites placed in `mans-intro`, torch lighting, a door sliding from offset 0 to
+32, and the camera contained by walls. That used a throwaway harness built on
+the library's own `@napi-rs/canvas` shim, and is not in the suite, because
+keeping it would mean adding a native dependency here. **Worth considering for
+phase 6**: the export path and the preview are the same path, so a golden-image
+test of one covers the other.
+
+**Camera speeds are per second, and that is load-bearing.** They were per tick
+at first, copied from the library's demos, which tick at 60Hz — but the preview
+ticks at the level's own `time.interval`, and all four real levels declare 40ms.
+So the camera walked at 80 units a second instead of 192, which is what "a bit
+too slow" turned out to mean. Per-tick speeds would also have made a level that
+declared a shorter interval walk faster, which is indefensible in an editor: how
+fast you cross a map you are inspecting has nothing to do with how fast its
+doors slide. `tests/libs/previewPlayer.test.ts` pins a second of walking to the
+same distance at 25Hz and at 60Hz.
 
 ```bash
 cd ~/projects/raycaster386-map-editor
@@ -48,72 +72,77 @@ open, roughly in order of how likely I think each is to be wrong:
 
 ## What works
 
-Phases 1 to 4 of the plan are done. The editor opens the four real mansion
-levels, holds them in a typed document model, and writes them back in a form
-the shipped converter still accepts.
+Phases 1 to 5 of the plan are done. The editor opens the four real mansion
+levels, holds them in a typed document model, writes them back in a form the
+shipped converter still accepts, and renders them as the game would.
 
-| Area                                                         | State                                      |
-| ------------------------------------------------------------ | ------------------------------------------ |
-| Vault (list, load, save, delete, previews)                   | done, byte-compatible with the old server  |
-| Document model, parse and serialise                          | done, with the round-trip guarantee below  |
-| Tiles: import from a sheet, browse, reorder, delete, animate | done                                       |
-| Blocks and thing templates: build, browse, delete            | done                                       |
-| The grid: paint, select, copy, paste, clear, zoom, resize    | done                                       |
-| Undo and redo                                                | done, scoped per change                    |
-| Tags, marks, start points, map shifting                      | done                                       |
-| **3D preview**                                               | **not started — phase 5**                  |
-| **Ambiance (sky, fog, brightness)**                          | **not started — belongs with the preview** |
-| Export to a game directory                                   | not started — phase 6                      |
+| Area                                                         | State                                     |
+| ------------------------------------------------------------ | ----------------------------------------- |
+| Vault (list, load, save, delete, previews)                   | done, byte-compatible with the old server |
+| Document model, parse and serialise                          | done, with the round-trip guarantee below |
+| Tiles: import from a sheet, browse, reorder, delete, animate | done                                      |
+| Blocks and thing templates: build, browse, delete            | done                                      |
+| The grid: paint, select, copy, paste, clear, zoom, resize    | done                                      |
+| Undo and redo                                                | done, scoped per change                   |
+| Tags, marks, start points, map shifting                      | done                                      |
+| 3D preview                                                   | done, verified headless — see above       |
+| Ambiance (sky, fog, brightness)                              | done, beside the preview                  |
+| **Export to a game directory**                               | **not started — phase 6**                 |
 
-`npm run check` runs typecheck, lint, format, 219 tests and the build. It is the
+`npm run check` runs typecheck, lint, format, 249 tests and the build. It is the
 gate to run before committing.
 
 ---
 
-## Next: phase 5, the preview
+## Next: phase 6, export to a game directory
 
-The goal is `RenderView`: show the level as the game sees it, inside the editor.
-
-The path is already proven to exist — `convertMapEditLevel` returns an
-`RceLevel`, exactly what `loadLevel` takes:
+Phase 5 is done: `/render` runs the level, and `/setup-ambiance` tunes what it
+looks like. How it fits together:
 
 ```
 store.serialise()  →  convertMapEditLevel(save, appendImages)  →  RceLevel
                    →  loadLevel(renderer, rce, { loadImage })
+                   →  buildObjects(renderer, loaded, { loadImage })
                    →  renderer.render(x, y, angle, height)
 ```
 
-Everything needed is in place:
+- `src/libs/previewWorld.ts` holds the world — renderer underneath, simulation
+  above, camera as an actor. No Vue, no timers. Modelled on the library's
+  `demos/dark-village/world.ts`, which is the reference for this path.
+- `src/views/RenderView.vue` owns the canvas, the frame loop and the keyboard.
+- `src/libs/previewPlayer.ts` and `previewInput.ts` are split out because they
+  are the only parts testable without a canvas — and movement is worth testing,
+  since walking through a wall does not show up in a screenshot.
 
-- `src/libs/appendImages.ts` is the browser `ImageAppender` the converter wants,
-  already ported and tested.
-- `loadImage` can be `Canvas.loadCanvas` from the engine library; the converter
-  hands back `data:` URLs, which it decodes fine.
-- `buildObjects` places the level's things as sprites, if the preview should
-  show them — an open question, see below.
+**The preview is the export path**, which is why phase 6 comes after it: every
+time someone looks at a preview, `convertMapEditLevel` runs over the real
+document. A preview that draws correctly is the strongest evidence available
+that the export will be correct. The compiled level is on the editor store as
+`generatedLevel` while the render screen is open, and the side panel already
+offers it as a `.json` download — phase 6 is about writing it to a game
+directory, not about producing it.
 
-Notes for when you build it:
+What phase 6 has to decide is where a game directory is and how the editor is
+told about it. The old `flags.export` ("publish this level on save") is carried
+in the document and surfaced in Settings, but nothing acts on it yet; the old
+server did the publishing behind `PUT /publish/:name`, which this server
+deliberately does not have.
 
-- **The preview and the export are the same path.** That is the point of doing
-  it this way: every time someone looks at a preview, the export pipeline runs.
-  A preview that works is strong evidence that export will.
+After that, phase 7 is validation surfaced in the UI plus the UX improvements
+deliberately deferred.
+
+Notes that still apply:
+
 - **A new level cannot be previewed.** The converter refuses a level with no
-  wall tile and no flat tile — `tests/components/SettingsView.test.ts` documents
-  that. Say so in the UI rather than showing an error.
-- **Converting is not cheap.** `mans-intro` is 59×59 with 98 tiles; the appender
-  builds every atlas. Do not convert on every keystroke — convert when the
-  preview is opened, and on an explicit refresh.
-- The old `RenderView` captured a screenshot on leaving and stored it as the
-  level's `preview`, which is what the vault serves as the thumbnail. Worth
-  keeping: it is why the level list has pictures.
-- `AmbianceSetup` (sky, fog distance and colour, brightness, colour filter)
-  belongs here, because it is the panel whose effect you can only judge by
-  looking at the render.
-
-After that, phase 6 is export to a game directory, and phase 7 is validation
-surfaced in the UI plus the UX improvements deliberately deferred.
-
----
+  wall tile and with no flat tile. `src/domain/previewable.ts` asks first and
+  says so in words; its test pins it against the converter in both directions,
+  so the two cannot drift apart.
+- **Converting is not cheap.** `mans-intro` is 59×59 with 98 tiles and the
+  appender builds every atlas, so it happens when the screen opens and on no
+  other trigger.
+- The preview stores a screenshot as the level's `preview` on the way out,
+  which is what the vault serves as the thumbnail — it is why the level list
+  has pictures.
 
 ## The things that are not obvious
 
@@ -147,6 +176,13 @@ and `tests/server/vault.test.ts` proves a loaded level saves back byte-identical
 touches, and only those are cloned — a document snapshot per change would copy
 381 KB of grid to paint one cell. **Anything a transaction leaves out of its
 scope is not restored.** That is the one way to use it wrongly.
+
+**`MyButton` is an `<a>`, and its `href` is a real prop.** The port handled its
+click with `@click.stop.prevent`, which cancels exactly the navigation an
+`href` exists for — so the render panel's download button, the one call site
+that needs it, did nothing at all. The default is now suppressed only for a
+button with no `href`. Worth knowing before making it a real `<button>` in the
+accessibility pass.
 
 **The drawing libraries take their canvas operations as a dependency**
 (`src/libs/canvasOps.ts`). happy-dom has no 2D context, so this is what makes
@@ -195,6 +231,14 @@ Each is noted in the code against the file it came from.
   a different point.
 - `ThingBrowser` carried a `setTileSelection` method referencing a `ref` its
   template never declared and an undeclared variable. Dead on arrival; dropped.
+- `AmbianceSetup` assigned the store's own ambiance object to its form, so every
+  keystroke was already applied to the document: its Apply button had nothing
+  left to do, and there was no way to abandon a change. The same class of bug as
+  `ThingBuilder` above. It was also captioned "Animation builder", having been
+  copied from that component.
+- `AmbianceSetup` let you enable a colour filter without choosing a colour, and
+  the converter drops a filter whose colour is empty — so the setting looked
+  applied and did nothing. Switching it on now fills in a usable colour.
 
 **One is user-visible and worth knowing about.** The phys table labelled index 6
 "Door right" and index 7 "Door left", but `convertMapEditLevel` maps 6 to

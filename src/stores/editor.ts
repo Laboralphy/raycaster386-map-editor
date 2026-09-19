@@ -28,6 +28,16 @@ export const useEditorStore = defineStore('editor', () => {
     const dirty = ref(false);
 
     /**
+     * The level as the preview last compiled it, or null.
+     *
+     * Not part of the document — it is derived from it, and large — but it
+     * outlives the render screen so the side panel beside it can offer it as a
+     * download. The old editor kept it in the same place, as the `editor`
+     * module's `levelGeneratedData`.
+     */
+    const generatedLevel = ref<Record<string, unknown> | null>(null);
+
+    /**
      * Which tile group the browser is showing.
      *
      * It lives here rather than in the browser component because the tile
@@ -134,6 +144,7 @@ export const useEditorStore = defineStore('editor', () => {
         statusBar,
         busy,
         dirty,
+        generatedLevel,
         tileBrowserType,
         blockBrowserSelected,
         thingBrowserSelected,

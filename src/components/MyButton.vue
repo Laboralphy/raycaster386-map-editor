@@ -3,22 +3,37 @@
  * The universal button, ported from `_OLD_MAPEDIT_/src/components/MyButton.vue`.
  *
  * Still an `<a>` rather than a `<button>`, because the old styling and the
- * layout around it assume an inline anchor, and one of the call sites relies on
- * `href`/`download` falling through onto it. Making it a real button is a
- * change worth making later, with the accessibility pass.
+ * layout around it assume an inline anchor. Making it a real button is a change
+ * worth making later, with the accessibility pass.
+ *
+ * `href` is a declared prop rather than something left to fall through, because
+ * the default must be suppressed for a button and honoured for a link, and the
+ * component cannot tell which it is from a fallthrough attribute. The port
+ * originally handled the click with `@click.stop.prevent`, which cancels the
+ * navigation an `href` exists for — so the download button on the render panel
+ * did nothing at all. Only a placeholder link is prevented now.
  */
-withDefaults(
+const props = withDefaults(
     defineProps<{
         title?: string;
         disabled?: boolean;
+        /** Makes it a real link. Left out, it is a button. */
+        href?: string;
+        /** Offers the link as a file of this name. Needs `href`. */
+        download?: string;
     }>(),
-    { title: undefined, disabled: false }
+    { title: undefined, disabled: false, href: undefined, download: undefined }
 );
 
 const emit = defineEmits<{ click: [] }>();
 
-function onClick(disabled: boolean): void {
-    if (!disabled) {
+function onClick(event: MouseEvent): void {
+    // An anchor has no disabled state of its own, so a disabled one has to be
+    // stopped here or it would still navigate.
+    if (props.disabled || !props.href) {
+        event.preventDefault();
+    }
+    if (!props.disabled) {
         emit('click');
     }
 }
@@ -26,10 +41,11 @@ function onClick(disabled: boolean): void {
 
 <template>
     <a
-        href="#"
+        :href="disabled ? undefined : (href ?? '#')"
+        :download="href ? download : undefined"
         :title="title"
         :class="['myButton', disabled ? 'disabled' : 'enabled']"
-        @click.stop.prevent="onClick(disabled)"
+        @click.stop="onClick"
     >
         <slot></slot>
     </a>

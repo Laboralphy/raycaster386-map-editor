@@ -90,7 +90,7 @@ src/
   stores/        level.ts (the document) and editor.ts (everything else)
   services/      vaultClient.ts — the four calls the editor makes
   components/    the chrome: WindowFrame, MyButton, SvgIcon, menus, popup
-  views/         one per route; NotYetView names the phase that brings the rest
+  views/         one per route
 server/          the Koa vault: routes, blob splitting, path validation
 shared/api.ts    the one type both sides import
 tests/           domain/ and server/ in Node, components/ in happy-dom
@@ -128,12 +128,11 @@ gain an explicit `block: 0`.
 `o876-raycaster-engine/apps/mapedit`. **It is gitignored**: it is a
 specification to read, not code to ship.
 
-Every library it carried is ported, and every component but three:
-
-- `RenderView` and `RenderSide` — the 3D preview, which phase 5 rebuilds on the
-  engine library rather than on the old `Engine`;
-- `AmbianceSetup` — sky, fog, brightness and colour filter, which belongs with
-  the renderer that shows what they do.
+Every library it carried is ported, and every component with it. The last three
+arrived in phase 5: `RenderView` and `RenderSide`, rebuilt on the engine
+library's renderer and simulation tiers rather than on the old monolithic
+`Engine`, and `AmbianceSetup`, which sits beside the preview because that is the
+only place its effect can be judged.
 
 `libs/generate` was never on the list — it is already ported, and ships as
 `@laboralphy/raycaster386/mapedit`.
@@ -146,12 +145,12 @@ Every library it carried is ported, and every component but three:
 | 2 ✅  | Tiles: splitter, appender, browser, loader, animation builder, `Siblings` |
 | 3 ✅  | Blocks and things: block renderer, builders, browsers                     |
 | 4 ✅  | The grid, overlays, undo, and the tag, marker, utility and thing panels   |
-| 5     | Preview: convert → `loadLevel` → `Renderer` in the browser                |
+| 5 ✅  | Preview: convert → `loadLevel` → `Renderer`, and the ambiance panel       |
 | 6     | Export to a game directory                                                |
 | 7     | Validation surfaced in the UI, then the UX improvements                   |
 
 Bugs in the old editor are fixed as each piece is ported, with a comment naming
-the old file. Twelve so far, including: a getter that sorted state in place (so
+the old file. Fourteen so far, including: a getter that sorted state in place (so
 opening the block browser silently reordered the exported legend); a tile
 deletion that left dangling face references, producing a level that could no
 longer be exported; a block deletion that cleared the lower storey of a cell but
