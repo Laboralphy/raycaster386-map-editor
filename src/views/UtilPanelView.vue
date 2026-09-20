@@ -49,6 +49,7 @@ function shift(direction: ShiftDirection): void {
         }
     });
     editor.dirty = true;
+    editor.requestRepaint();
     editor.setStatus(region ? `Region shifted ${direction}` : `Map shifted ${direction}`);
 }
 </script>

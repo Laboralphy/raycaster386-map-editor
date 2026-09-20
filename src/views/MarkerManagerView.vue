@@ -49,6 +49,9 @@ const currentStartpoint = computed({
     set: (value: number) => {
         level.setActorStartpoint(Number(value));
         editor.dirty = true;
+        // The rose is drawn differently on the start point that is current, so
+        // merely choosing a different one changes two cells.
+        editor.requestRepaint();
     },
 });
 
@@ -63,6 +66,7 @@ function markSelection(label: string, mark: { shape?: number; color?: string }):
         }
     });
     editor.dirty = true;
+    editor.requestRepaint();
 }
 
 /**
@@ -86,6 +90,7 @@ function placeStartpoint(angle: number): void {
         level.setStartpoint(currentStartpoint.value, { x: x1, y: y1, angle });
     });
     editor.dirty = true;
+    editor.requestRepaint();
     editor.setStatus(`Start point #${currentStartpoint.value} at ${x1},${y1}`);
 }
 
@@ -94,6 +99,7 @@ function addStartpoint(): void {
         level.setActorStartpoint(level.addStartpoint());
     });
     editor.dirty = true;
+    editor.requestRepaint();
 }
 
 function removeStartpoint(): void {
@@ -106,6 +112,7 @@ function removeStartpoint(): void {
         level.removeStartpoint(currentStartpoint.value);
     });
     editor.dirty = true;
+    editor.requestRepaint();
 }
 </script>
 

@@ -87,7 +87,18 @@ function redraw(): void {
 
 const selection = useGridSelection(() => renderer.cellSize, invalidate);
 const tools = useGridTools(invalidate);
-useBlockCache(blockCache, invalidateAll);
+/*
+ * Block previews are data URLs, and decoding one is asynchronous — so the grid
+ * is first painted before a single thumbnail exists, and every cell comes out
+ * as the red "no block here" dot. The cache reports once, when they have all
+ * decoded, and this has to *repaint* on that: marking the grid stale without
+ * drawing it left the level looking empty until some other event — a click —
+ * happened to call `redraw()`.
+ */
+useBlockCache(blockCache, () => {
+    invalidateAll();
+    redraw();
+});
 
 /** What the grid edits, from the route it is mounted on. */
 const mode = computed(() => {
@@ -245,6 +256,18 @@ watch(
     () => route.path,
     () => {
         editor.clearRegion();
+        invalidateAll();
+        redraw();
+    }
+);
+
+// The side panels edit the document but cannot reach this component, so they
+// ask for a repaint through the store instead. Without it, a change made from
+// a panel — removing a thing, tagging a selection, shifting the map — only
+// appeared the next time something else happened to redraw the grid.
+watch(
+    () => editor.repaintRequest,
+    () => {
         invalidateAll();
         redraw();
     }

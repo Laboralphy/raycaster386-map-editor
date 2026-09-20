@@ -42,6 +42,8 @@ function change(label: string, mutate: (x: number, y: number) => void): void {
         }
     });
     editor.dirty = true;
+    // The grid draws a marker on a tagged cell, so every one of these shows.
+    editor.requestRepaint();
 }
 
 function add(): void {

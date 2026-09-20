@@ -52,6 +52,8 @@ function remove(): void {
     });
     editor.selectedThing = null;
     editor.dirty = true;
+    // Both the thing and its selection highlight have gone from the cell.
+    editor.requestRepaint();
     editor.setStatus(`Thing removed from ${xc},${yc}`);
 }
 </script>

@@ -97,6 +97,28 @@ export const useEditorStore = defineStore('editor', () => {
     }
 
     /**
+     * Bumped when something outside the grid changes what a cell looks like.
+     *
+     * The grid repaints in response to its own mouse and keyboard handlers, and
+     * to the two things it watches — so a side panel editing the document had
+     * no way to reach it, and its change stayed invisible until something else
+     * happened to trigger a redraw. Removing a thing looked like it had done
+     * nothing at all.
+     *
+     * A counter rather than a flag, so two edits to the same cell are two
+     * signals. It carries no cell list on purpose: panel edits are user-paced
+     * rather than per-frame, the grid already repaints in full on a floor or
+     * route change, and naming cells here would invite the same silent
+     * half-failure that getting a `history.transact` scope wrong does.
+     */
+    const repaintRequest = ref(0);
+
+    /** Asks the grid to repaint. Call after changing what a cell looks like. */
+    function requestRepaint(): void {
+        repaintRequest.value += 1;
+    }
+
+    /**
      * Forgets everything that referred to the document being replaced.
      *
      * Every one of these holds a reference into the *old* level — a block id, a
@@ -182,6 +204,8 @@ export const useEditorStore = defineStore('editor', () => {
         region,
         regionCells,
         clearRegion,
+        repaintRequest,
+        requestRepaint,
         resetForLevel,
         popup,
         popupTitle,

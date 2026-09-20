@@ -217,3 +217,104 @@ describe('the thing panel', () => {
         expect(wrapper.text()).toContain('template no longer exists');
     });
 });
+
+/**
+ * Asking the grid to repaint.
+ *
+ * The grid draws to a canvas happy-dom does not provide, so it cannot be
+ * mounted alongside these — but the signal it repaints on is plain store state,
+ * and that is the part that was missing. Each panel edits the document and then
+ * has no way to reach the component drawing it, so without this the change
+ * stayed invisible: removing a thing looked like it had done nothing until some
+ * later event happened to redraw the grid.
+ *
+ * One case per panel, because the bug was per-panel — each simply forgot.
+ */
+describe('telling the grid to repaint', () => {
+    /** Runs `act` and reports how many repaints it asked for. */
+    async function repaints(
+        editor: ReturnType<typeof useEditorStore>,
+        act: () => Promise<void>
+    ): Promise<number> {
+        const before = editor.repaintRequest;
+        await act();
+        return editor.repaintRequest - before;
+    }
+
+    it('after a tag is added', async () => {
+        const { editor } = seeded();
+        select(editor, 0, 0, 1, 1);
+        const wrapper = mount(TagManagerView);
+
+        const count = await repaints(editor, async () => {
+            await wrapper.find('input[type="text"]').setValue('sound door');
+            await wrapper.findAll('a.myButton').at(-1)!.trigger('click');
+        });
+        expect(count).toBe(1);
+    });
+
+    it('after cells are marked', async () => {
+        const { editor } = seeded();
+        select(editor, 0, 0, 1, 0);
+        const wrapper = mount(MarkerManagerView);
+        await wrapper.vm.$nextTick();
+
+        const count = await repaints(editor, () =>
+            wrapper.findAll('a.myButton')[2].trigger('click')
+        );
+        expect(count).toBe(1);
+    });
+
+    /** The rose is drawn differently on the current one, so two cells change. */
+    it('after a start point is added or removed', async () => {
+        const { editor } = seeded();
+        const wrapper = mount(MarkerManagerView);
+        await wrapper.vm.$nextTick();
+
+        const add = wrapper.findAll('a.myButton').find((b) => b.text() === 'Add')!;
+        expect(await repaints(editor, () => add.trigger('click'))).toBe(1);
+
+        const remove = wrapper.findAll('a.myButton').find((b) => b.text() === 'Remove')!;
+        expect(await repaints(editor, () => remove.trigger('click'))).toBe(1);
+    });
+
+    it('after the map is shifted', async () => {
+        const { editor } = seeded(2);
+        const wrapper = mount(UtilPanelView);
+
+        const count = await repaints(editor, () =>
+            wrapper.findAll('a.myButton')[3].trigger('click')
+        );
+        expect(count).toBe(1);
+    });
+
+    /** The one that was reported: the deletion left the sprite on screen. */
+    it('after a thing is taken off the map', async () => {
+        const { level, editor } = seeded();
+        level.addTiles('sprite', [{ content: 'sprite', width: 32, height: 32 }]);
+        const id = level.upsertThing({ ...emptyThing(0), id: 0, tile: 1 });
+        level.setCellThing(0, 0, 1, 1, id);
+        editor.selectedThing = { xc: 0, yc: 0, xt: 1, yt: 1 };
+
+        const wrapper = mount(ThingSideView);
+        await wrapper.vm.$nextTick();
+
+        const count = await repaints(editor, () => wrapper.find('a.myButton').trigger('click'));
+        expect(count).toBe(1);
+    });
+
+    /** A counter, not a flag: two edits in a row are two repaints. */
+    it('once per edit, so a repeated change is not swallowed', async () => {
+        const { editor } = seeded();
+        select(editor, 0, 0);
+        const wrapper = mount(MarkerManagerView);
+        await wrapper.vm.$nextTick();
+
+        const shape = wrapper.findAll('a.myButton')[2];
+        const count = await repaints(editor, async () => {
+            await shape.trigger('click');
+            await shape.trigger('click');
+        });
+        expect(count).toBe(2);
+    });
+});
