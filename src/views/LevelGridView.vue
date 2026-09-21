@@ -148,20 +148,42 @@ function onMouseMove(event: MouseEvent): void {
     redraw();
 }
 
+/**
+ * Picks the thing under the mouse and shows it in the thing panel.
+ *
+ * @returns false when there is no thing there
+ */
+function pickThing(x: number, y: number, xt: number, yt: number): boolean {
+    if (!level.thingAt(x, y, xt, yt)) {
+        return false;
+    }
+    editor.selectedThing = { xc: x, yc: y, xt, yt };
+    void router.push('/view-thing');
+    return true;
+}
+
 function onMouseUp(event: MouseEvent): void {
     selection.onMouseUp();
     if (editor.selectedTool !== 1) {
+        // The select tool picks a thing only on a plain click: a drag across
+        // cells is still a region selection, whatever it started on.
+        const r = editor.selectedRegion;
+        const clicked = r.x1 === r.x2 && r.y1 === r.y2;
+        if (mode.value === 'thing' && clicked) {
+            const { x, y, xt, yt } = subCell(event);
+            if (pickThing(x, y, xt, yt)) {
+                editor.clearRegion();
+                invalidateAll();
+                redraw();
+            }
+        }
         return;
     }
     if (mode.value === 'block') {
         tools.paintSelection();
     } else if (mode.value === 'thing') {
         const { x, y, xt, yt } = subCell(event);
-        const existing = level.thingAt(x, y, xt, yt);
-        if (existing) {
-            editor.selectedThing = { xc: x, yc: y, xt, yt };
-            void router.push('/view-thing');
-        } else {
+        if (!pickThing(x, y, xt, yt)) {
             tools.placeThing(x, y, xt, yt);
         }
     }
