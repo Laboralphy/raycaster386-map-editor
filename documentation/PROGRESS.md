@@ -281,8 +281,9 @@ Background reading, in the library repo:
   the API reads well from outside. If a fix cannot wait for a release, `npm link`
   the local checkout — but unlink before committing, because a linked build
   hides packaging mistakes only the real tarball reveals.
-- There is no GitHub repository for the editor yet, and `gh` is not installed on
-  this machine, so creating one is a web-UI job.
+- The repository is `git@github.com:Laboralphy/raycaster386-map-editor.git`.
+  `gh` is not installed on this machine, so pull requests and issues are a
+  web-UI job; pushing works over SSH as normal.
 - `vault/` is a **copy** of the four mansion levels. The originals are at
   `~/projects/o876-raycaster-engine/_SAVE_FILES/vault/local/maps` and are the
   only copies that exist — never point a writable server at them.
